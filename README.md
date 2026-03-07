@@ -1,5 +1,16 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+**Source of truth:** All product scope, build order, and API/data decisions come from [`refrences/requirements.txt`](refrences/requirements.txt). Reference it for milestones, feature specs, and endpoints.
+
+## Setup (Milestone 1+)
+
+1. Copy env template: `cp .env.local.example .env.local`
+2. Create a [Supabase](https://supabase.com) project (e.g. `mini-rv-parks`).
+3. In **Settings → API**, copy Project URL, `anon` key, and `service_role` key into `.env.local` as `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+4. In **Settings → Auth**, enable Email provider. For dev you can disable "Confirm email".
+5. Run the initial migration: Supabase Dashboard → SQL Editor → paste and run `supabase/migrations/001_initial_schema.sql`.
+6. Create the **listing-photos** storage bucket: Storage → New bucket → name `listing-photos`, set **Public bucket** so listing images are publicly readable. No extra policies required if uploads go through the API (server uses service role); for client uploads, add a policy allowing authenticated users to upload to `{listing_id}/*`.
+
 ## Getting Started
 
 First, run the development server:

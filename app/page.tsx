@@ -1,65 +1,306 @@
-import Image from "next/image";
+"use client";
+
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Search, MessageSquare, CheckCircle, MapPin, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAppStore } from "@/lib/store";
+
+const RADIUS_OPTIONS = [5, 10, 25, 50] as const;
+
+const DESTINATIONS = [
+  { name: "Texas Hill Country", gradient: "from-amber-700 to-orange-500" },
+  { name: "Florida Keys", gradient: "from-cyan-600 to-teal-400" },
+  { name: "Arizona Desert", gradient: "from-red-700 to-amber-500" },
+  { name: "Colorado Mountains", gradient: "from-emerald-700 to-sky-500" },
+] as const;
+
+const STEPS = [
+  {
+    icon: Search,
+    title: "Search",
+    description: "Browse private RV pads and storage near your destination",
+  },
+  {
+    icon: MessageSquare,
+    title: "Request",
+    description: "Submit a request to book. The host reviews and accepts.",
+  },
+  {
+    icon: CheckCircle,
+    title: "Book & Go",
+    description: "Pay securely after the host accepts. Show up and enjoy.",
+  },
+] as const;
+
+const FOOTER_LINKS = [
+  { label: "About", href: "/about" },
+  { label: "How It Works", href: "#how-it-works" },
+  { label: "Host Your Space", href: "/host" },
+  { label: "Join Beta", href: "/beta" },
+  { label: "Support", href: "/support" },
+] as const;
 
 export default function Home() {
+  const router = useRouter();
+  const { activeTab, setActiveTab, setSearchFilters } = useAppStore();
+
+  const [destination, setDestination] = useState("");
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
+  const [moveIn, setMoveIn] = useState("");
+  const [radius, setRadius] = useState(25);
+
+  function handleSearch(e: FormEvent) {
+    e.preventDefault();
+
+    setSearchFilters({ destination, radius });
+
+    if (activeTab === "stays") {
+      const params = new URLSearchParams({ destination, radius: String(radius) });
+      if (checkIn) params.set("checkIn", checkIn);
+      if (checkOut) params.set("checkOut", checkOut);
+      router.push(`/stays?${params}`);
+    } else {
+      const params = new URLSearchParams({ destination, radius: String(radius) });
+      if (moveIn) params.set("moveIn", moveIn);
+      router.push(`/storage?${params}`);
+    }
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="flex min-h-screen flex-col">
+      {/* Hero */}
+      <section className="relative flex min-h-[520px] flex-col items-center justify-center bg-gradient-to-br from-emerald-800 via-emerald-700 to-teal-600 px-4 py-24 text-center text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.12),transparent_70%)]" />
+
+        <div className="relative z-10 mx-auto max-w-3xl">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+            Find Private RV Pads
+            <br />
+            from Real Landowners
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mx-auto mt-4 max-w-lg text-lg text-emerald-100 sm:text-xl">
+            No big parks. No crowds. Just great spots.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        {/* Search bar */}
+        <form
+          onSubmit={handleSearch}
+          className="relative z-10 mx-auto mt-10 w-full max-w-3xl rounded-2xl bg-white p-2 shadow-xl sm:p-3"
+          role="search"
+          aria-label="Search RV pads"
+        >
+          {/* Tabs */}
+          <div className="mb-3 flex gap-1 border-b border-gray-100 pb-2" role="tablist">
+            {(["stays", "storage"] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab}
+                aria-controls={`panel-${tab}`}
+                className={`rounded-lg px-4 py-1.5 text-sm font-medium capitalize transition-colors focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
+                  activeTab === tab
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {/* Inputs */}
+          <div
+            id={`panel-${activeTab}`}
+            role="tabpanel"
+            className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-0 sm:divide-x sm:divide-gray-200"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {/* Destination */}
+            <div className="flex-1 px-2 sm:px-3">
+              <label htmlFor="destination" className="mb-1 block text-xs font-medium text-gray-500">
+                Destination
+              </label>
+              <div className="flex items-center gap-2">
+                <MapPin className="size-4 shrink-0 text-gray-400" aria-hidden="true" />
+                <input
+                  id="destination"
+                  type="text"
+                  placeholder="Where to?"
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  className="w-full bg-transparent py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Date inputs */}
+            {activeTab === "stays" ? (
+              <div className="flex flex-1 gap-2 px-2 sm:gap-0 sm:divide-x sm:divide-gray-200 sm:px-0">
+                <div className="flex-1 px-2 sm:px-3">
+                  <label htmlFor="check-in" className="mb-1 block text-xs font-medium text-gray-500">
+                    Check-in
+                  </label>
+                  <input
+                    id="check-in"
+                    type="date"
+                    value={checkIn}
+                    onChange={(e) => setCheckIn(e.target.value)}
+                    className="w-full bg-transparent py-1.5 text-sm text-gray-900 focus:outline-none"
+                  />
+                </div>
+                <div className="flex-1 px-2 sm:px-3">
+                  <label htmlFor="check-out" className="mb-1 block text-xs font-medium text-gray-500">
+                    Check-out
+                  </label>
+                  <input
+                    id="check-out"
+                    type="date"
+                    value={checkOut}
+                    onChange={(e) => setCheckOut(e.target.value)}
+                    className="w-full bg-transparent py-1.5 text-sm text-gray-900 focus:outline-none"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 px-2 sm:px-3">
+                <label htmlFor="move-in" className="mb-1 block text-xs font-medium text-gray-500">
+                  Move-in date
+                </label>
+                <input
+                  id="move-in"
+                  type="date"
+                  value={moveIn}
+                  onChange={(e) => setMoveIn(e.target.value)}
+                  className="w-full bg-transparent py-1.5 text-sm text-gray-900 focus:outline-none"
+                />
+              </div>
+            )}
+
+            {/* Radius */}
+            <div className="px-2 sm:px-3">
+              <label htmlFor="radius" className="mb-1 block text-xs font-medium text-gray-500">
+                Radius
+              </label>
+              <select
+                id="radius"
+                value={radius}
+                onChange={(e) => setRadius(Number(e.target.value))}
+                className="w-full bg-transparent py-1.5 text-sm text-gray-900 focus:outline-none"
+              >
+                {RADIUS_OPTIONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r} miles
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Submit */}
+            <div className="px-2 sm:px-1">
+              <Button
+                type="submit"
+                className="w-full cursor-pointer rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 sm:w-auto"
+              >
+                <Search className="size-4" aria-hidden="true" />
+                <span>Search</span>
+              </Button>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      {/* How It Works */}
+      <section id="how-it-works" className="bg-white px-4 py-20">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
+            How It Works
+          </h2>
+          <p className="mx-auto mt-2 max-w-lg text-center text-gray-500">
+            Three simple steps to your next adventure
+          </p>
+
+          <div className="mt-14 grid gap-8 sm:grid-cols-3">
+            {STEPS.map((step, i) => (
+              <div
+                key={step.title}
+                className="group relative rounded-2xl border border-gray-100 bg-gray-50/50 p-8 text-center transition-shadow hover:shadow-md"
+              >
+                <span className="absolute -top-3 left-6 rounded-full bg-emerald-600 px-2.5 py-0.5 text-xs font-bold text-white">
+                  {i + 1}
+                </span>
+                <step.icon
+                  className="mx-auto size-10 text-emerald-600"
+                  aria-hidden="true"
+                  strokeWidth={1.5}
+                />
+                <h3 className="mt-4 text-lg font-semibold text-gray-900">{step.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-gray-500">{step.description}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </main>
+      </section>
+
+      {/* Popular Destinations */}
+      <section className="bg-gray-50 px-4 py-20">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
+            Popular Destinations
+          </h2>
+          <p className="mx-auto mt-2 max-w-lg text-center text-gray-500">
+            Explore unique private pads across the country
+          </p>
+
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {DESTINATIONS.map((dest) => (
+              <Link
+                key={dest.name}
+                href={`/stays?destination=${encodeURIComponent(dest.name)}`}
+                className="group relative flex h-48 items-end overflow-hidden rounded-2xl bg-gradient-to-br p-5 transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+              >
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${dest.gradient} transition-opacity group-hover:opacity-90`}
+                />
+                <div className="relative z-10 flex w-full items-center justify-between">
+                  <span className="text-lg font-semibold text-white drop-shadow-sm">
+                    {dest.name}
+                  </span>
+                  <ChevronRight
+                    className="size-5 text-white/80 transition-transform group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="mt-auto bg-gray-900 px-4 py-12 text-gray-400">
+        <div className="mx-auto flex max-w-5xl flex-col items-center gap-6">
+          <nav aria-label="Footer navigation">
+            <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+              {FOOTER_LINKS.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    href={link.href}
+                    className="text-sm transition-colors hover:text-white focus-visible:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:rounded-sm"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <p className="text-xs text-gray-500">&copy; 2026 Mini RV Parks</p>
+        </div>
+      </footer>
     </div>
   );
 }

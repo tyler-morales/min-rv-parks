@@ -1,0 +1,586 @@
+I’m building Mini RV Parks, an RV-only booking website using a near copy of Outdoorsy + Airbnb interface patterns (search → list/map results → listing detail → request-to-book), but simpler and cleaner. The beta includes two tabs: Stays and Storage.
+
+This is not general camping (no tents, no cabins, no boondocking). It’s built for RV pads with clear hookups, strong photos, and a smooth request-to-book flow.
+A) Plain-English overview (read this first)
+1) Stays (nightly)
+
+Guests should be able to:
+
+    search by destination + radius + dates
+
+    filter by hookups + pull-through
+
+    view listing pages
+
+    request to book
+
+    pay only after the host accepts
+
+Hosts (landowners) should be able to:
+
+    create a listing quickly
+
+    upload photos (critical)
+
+    set availability (available/blocked)
+
+    set nightly price
+
+    accept/decline requests
+
+2) Storage (monthly)
+
+Guests should be able to:
+
+    search storage by destination + radius + move-in date
+
+    view storage listing pages
+
+    request storage
+
+    pay only after the host accepts (deposit + first month)
+
+Hosts should be able to:
+
+    create a storage listing quickly
+
+    upload photos (critical)
+
+    toggle availability (available/unavailable)
+
+    set monthly price + deposit
+
+    accept/decline storage requests
+
+Admin (me) controls quality
+
+I will:
+
+    approve listings before they go live
+
+    approve beta guests (grassroots model: apply → I call → I approve)
+
+    mark listings “Verified” in beta (meaning I checked location + photos)
+
+Beta launch target: May 1
+Inventory target before letting guests request: 50 approved, LIVE listings
+B) What I am NOT building for beta
+
+To keep scope tight, beta does not include:
+
+    guest accounts (no signup/login)
+
+    chat inbox (only one message at request time)
+
+    dynamic pricing, discounts, promo codes
+
+    reviews
+
+    iCal calendar sync
+
+    complex policy customization per host
+
+    recurring subscription billing for storage (renewals handled later)
+
+C) Beta requirements (locked decisions)
+Guest
+
+    No guest account
+
+    Guests can browse freely
+
+    Guests must be beta approved to submit a request (Stays or Storage)
+
+    Results show total price for selected dates (all-in)
+
+    Map toggle is allowed but no exact pin/address (privacy)
+
+Host
+
+    Host accounts required (login)
+
+    Listing must be admin-approved to go LIVE
+
+    Minimum 5 photos required to submit
+
+Stays: Booking + payment
+
+    Request-to-book only
+
+    Host accepts → guest has 24 hours to pay
+
+    If unpaid → request expires and dates reopen
+
+    Stripe Checkout for payment
+
+Stays: Filters (top quick toggles)
+
+    Electric
+
+    Water
+
+    Sewage (sewer hookup at pad)
+
+    Gas (propane refill available onsite)
+
+    Pull-through
+
+Storage: Booking + payment
+
+    Request-to-store only
+
+    Host accepts → guest has 24 hours to pay
+
+    Payment collected at checkout: deposit + first month
+
+    If unpaid → request expires; storage slot reopens
+
+    No recurring billing in beta (we will add later if needed)
+
+“Verified” (beta meaning)
+
+    Verified = I checked location + photos (only)
+
+D) Build order (implementation plan)
+Milestone 1: Host + Admin supply system (Stays + Storage)
+
+Host:
+
+    Host login
+
+    Listing creation wizard (supports STAY or STORAGE type)
+
+    Photo upload
+
+    Availability controls:
+
+        Stays: per-day available/blocked calendar
+
+        Storage: simple available/unavailable toggle (1 slot per listing for beta)
+
+    Pricing:
+
+        Stays: base nightly price
+
+        Storage: monthly price + deposit
+
+    Submit listing for review
+
+Admin:
+
+    Admin listing review queue (approve/reject/suspend)
+
+    Verified toggle (location+photos verified)
+
+    Basic edit listing
+
+Milestone 2: Guest search + results (Stays + Storage)
+
+    Destination autocomplete + radius + dates (Stays)
+
+    Destination autocomplete + radius + move-in date (Storage)
+
+    Results list + map toggle
+
+    Filter toggles (Stays) + core storage filters (below)
+
+    Listing detail pages
+
+Milestone 3: Request flows + accept/decline
+
+    Request forms (name/email/phone + optional message)
+
+    Host dashboard shows requests + accept/decline
+
+    Email notifications
+
+Milestone 4: Payments + expiry job
+
+    Stripe Checkout after acceptance
+
+    24h pay window
+
+    Background job to expire unpaid accepted requests
+
+Milestone 5: Beta application gating
+
+    Guest “Apply for Beta”
+
+    Admin approves applications
+
+    Only approved guests can request
+
+E) Detailed functional spec (no guessing)
+1) Listing types
+
+Every listing has:
+
+    listing_type = STAY | STORAGE
+    A listing is one type (not mixed) in beta.
+
+2) STAYS — Listing fields (required)
+
+Basics
+
+    Title (string)
+
+    Description (string)
+
+    “Near Town” label (string; derived from location)
+
+    Exact location stored privately (lat/lng)
+
+RV fit
+
+    Max rig length (feet, integer)
+
+    Slide-outs allowed (boolean)
+
+    Pull-through (boolean)
+
+Hookups / features
+
+    Electric: enum = NONE / 15 / 30 / 50
+
+    Water: boolean
+
+    Sewage (sewer hookup at pad): boolean
+
+    Gas (propane refill onsite): boolean
+
+Pricing + rules
+
+    Base nightly price (integer cents)
+
+    Min stay nights (int)
+
+    Max stay nights (int)
+
+Photos
+
+    Minimum 5 photos required to submit listing
+
+Availability
+
+    Per-day availability: available/blocked
+
+3) STORAGE — Listing fields (required)
+
+Basics
+
+    Title (string)
+
+    Description (string)
+
+    “Near Town” label (derived)
+
+    Exact location stored privately (lat/lng)
+
+Rig fit
+
+    Max rig length (feet, integer)
+
+Storage features
+
+    Storage type: enum = OUTDOOR / COVERED / INDOOR
+
+    Access: enum = 24_7 / DAYTIME_ONLY / SCHEDULED
+
+    Security features (multi-select): GATED / CAMERAS / LIGHTING / ON_SITE_HOST / NONE
+
+    Power available (boolean; trickle/battery tender)
+
+Rules
+
+    “No living on site” default = true (displayed on listing)
+
+Pricing
+
+    Monthly price (integer cents)
+
+    Deposit (integer cents) — beta default: $50
+
+    Minimum months (int) — beta default: 1
+
+Photos
+
+    Minimum 5 photos required to submit
+
+Availability
+
+    Simple boolean is_available (1 storage slot per listing for beta)
+
+    When storage contract is ACTIVE → is_available = false
+
+4) Guest search behavior
+STAYS search
+
+Inputs:
+
+    destination lat/lng (from autocomplete)
+
+    radius miles (5/10/25/50)
+
+    date range (check-in/out)
+
+    optional toggles: electric/water/sewage/gas/pull-through
+
+Search returns:
+
+    listings within radius
+
+    status = LIVE
+
+    listing available across date range
+
+    includes total price for selected dates
+
+Results card must show:
+
+    thumbnail
+
+    title
+
+    “Near Town”
+
+    badges
+
+    total price (all-in)
+
+STORAGE search
+
+Inputs:
+
+    destination lat/lng
+
+    radius miles (5/10/25/50)
+
+    move-in date
+
+    optional toggles:
+
+        covered/indoor (storage_type != OUTDOOR)
+
+        24/7 access
+
+        gated
+
+        cameras
+
+        power available
+
+Search returns:
+
+    listings within radius
+
+    status = LIVE
+
+    is_available = true
+
+    shows monthly price + deposit note
+
+Results card must show:
+
+    thumbnail
+
+    title
+
+    “Near Town”
+
+    key badges (covered/indoor, gated, cameras, 24/7)
+
+    $/month
+
+5) Location privacy rules (exact)
+
+I store:
+
+    private lat/lng (exact)
+
+    public lat/lng (fuzzed) for map marker
+
+I display:
+
+    list card + listing page: only “Near {Town}”
+
+    map: public fuzzed marker only
+
+    exact address is not shown in beta
+
+6) Booking system rules (exact)
+STAYS objects
+
+Booking Request (pre-payment)
+Statuses: REQUESTED / ACCEPTED / DECLINED / EXPIRED / CANCELLED_BY_GUEST / CANCELLED_BY_HOST
+
+Rules:
+
+    guest creates REQUESTED
+
+    host ACCEPTS or DECLINES
+
+    on ACCEPT: set expires_at = now + 24h
+
+    while ACCEPTED: dates are soft-held (unavailable to other requests)
+
+    if guest pays → create booking CONFIRMED
+
+    if unpaid by expires_at → request EXPIRED and soft-hold removed
+
+Booking (post-payment)
+Statuses: CONFIRMED / CANCELLED / COMPLETED
+STORAGE objects
+
+Storage Request (pre-payment)
+Statuses: same as above
+
+Rules:
+
+    guest creates REQUESTED with move-in date + months (default 1)
+
+    host ACCEPTS or DECLINES
+
+    on ACCEPT: set expires_at = now + 24h and soft-hold the slot
+
+    if guest pays deposit + first month → create Storage Contract ACTIVE and set listing unavailable
+
+    if unpaid by expires_at → EXPIRED and slot reopens
+
+Storage Contract (post-payment)
+Statuses: ACTIVE / CANCELLED / ENDED
+Beta: no recurring billing. Contract records start date and monthly price snapshot.
+7) Beta guest approval (grassroots)
+
+Guests must apply before they can request-to-book/request storage.
+
+Flow:
+
+    guest applies: name, email, phone, notes
+
+    I call them
+
+    I mark them approved
+
+    only approved email can submit requests
+
+8) Email notifications (required)
+
+Send emails on:
+
+    guest applied
+
+    guest approved
+
+    request submitted (host + guest)
+
+    request accepted (host + guest) + payment link + expiry timestamp
+
+    request declined (guest)
+
+    request expired (host + guest)
+
+    booking confirmed (host + guest)
+
+    booking cancelled (host + guest)
+
+    storage contract active (host + guest)
+
+    storage contract cancelled/ended (host + guest)
+
+F) Recommended tech defaults (contractor can propose alternatives once)
+
+    DB: Postgres
+
+    Maps/geocode: Mapbox
+
+    Payments + payouts: Stripe
+
+    Photo storage: S3
+
+    Email: Postmark (or SendGrid)
+
+If you want to propose changes, do it once upfront.
+G) API endpoints (minimum)
+Guest — Stays
+
+    GET /search
+
+    GET /listings/:id
+
+    POST /beta/apply
+
+    POST /booking_requests
+
+    GET /booking_requests/:id
+
+    POST /payments/checkout (for accepted request)
+
+Guest — Storage
+
+    GET /storage/search
+
+    GET /storage/listings/:id
+
+    POST /storage_requests
+
+    GET /storage_requests/:id
+
+    POST /payments/storage_checkout (deposit + first month)
+
+Host
+
+    POST /host/listings
+
+    PATCH /host/listings/:id
+
+    POST /host/listings/:id/photos
+
+    POST /host/listings/:id/submit
+
+    POST /host/booking_requests/:id/accept
+
+    POST /host/booking_requests/:id/decline
+
+    POST /host/storage_requests/:id/accept
+
+    POST /host/storage_requests/:id/decline
+
+    POST /host/payout/connect
+
+Admin
+
+    GET /admin/listings?status=pending
+
+    POST /admin/listings/:id/approve
+
+    POST /admin/listings/:id/reject
+
+    POST /admin/listings/:id/suspend
+
+    POST /admin/listings/:id/verify
+
+    GET /admin/beta_applications
+
+    POST /admin/beta_applications/:id/approve
+
+    POST /admin/beta_applications/:id/reject
+
+Background
+
+    Cron job: expire accepted requests past expires_at (stays + storage)
+
+H) Deliverables I expect from you
+
+    Working beta deployed to staging, then production
+
+    Admin panel for listing approvals + beta approvals + verified toggle
+
+    Host listing creation + photo uploads + calendar/availability + request handling
+
+    Guest search + listing pages + request-to-book + Stripe payments
+
+    Storage tab: search + listing pages + request storage + Stripe payment (deposit + first month)
+
+    Basic logging + error reporting
+
+    Setup documentation: env vars, deployment steps, basic runbook
