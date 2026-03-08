@@ -6,7 +6,7 @@ import { CheckCircle, MapPin } from "lucide-react";
 import { differenceInCalendarDays } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import type { StayListing, StorageListing } from "@/lib/types";
-import { formatPrice } from "@/lib/mock-data";
+import { formatPrice } from "@/lib/utils";
 
 function isStay(listing: StayListing | StorageListing): listing is StayListing {
   return listing.listingType === "STAY";
