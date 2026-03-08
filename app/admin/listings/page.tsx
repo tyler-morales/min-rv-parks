@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Shield, CheckCircle, Minus } from "lucide-react";
-import { useAppStore } from "@/lib/store";
+import { useAuth } from "@/lib/hooks/use-auth";
 import type { Listing, ListingStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,28 +27,41 @@ const FILTER_TABS: { value: FilterTab; label: string }[] = [
 ];
 
 export default function AdminListingsPage() {
-  const isAdmin = useAppStore((s) => s.isAdmin);
-  const stayListings = useAppStore((s) => s.stayListings);
-  const storageListings = useAppStore((s) => s.storageListings);
-  const updateListingStatus = useAppStore((s) => s.updateListingStatus);
-  const toggleVerified = useAppStore((s) => s.toggleVerified);
-
+  const { isAdmin, loading: authLoading } = useAuth();
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterTab>("ALL");
 
-  const allListings: Listing[] = useMemo(
-    () =>
-      [...stayListings, ...storageListings].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      ),
-    [stayListings, storageListings],
-  );
+  const fetchListings = useCallback(async (status?: string) => {
+    const url = status
+      ? `/api/admin/listings?status=${status}`
+      : "/api/admin/listings";
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const data = await res.json();
+    setListings(Array.isArray(data) ? data : []);
+  }, []);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    fetchListings(filter === "ALL" ? undefined : filter).finally(() =>
+      setLoading(false)
+    );
+  }, [isAdmin, filter, fetchListings]);
 
   const filtered = useMemo(
-    () => (filter === "ALL" ? allListings : allListings.filter((l) => l.status === filter)),
-    [allListings, filter],
+    () =>
+      filter === "ALL"
+        ? listings
+        : listings.filter((l) => l.status === filter),
+    [listings, filter],
   );
 
-  if (!isAdmin) {
+  if (!authLoading && !isAdmin) {
     return (
       <main className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4">
         <Shield className="size-12 text-muted-foreground" />
@@ -63,13 +76,27 @@ export default function AdminListingsPage() {
     );
   }
 
+  const handleAction = async (listingId: string, action: string) => {
+    const res = await fetch(`/api/admin/listings/${listingId}/${action}`, {
+      method: "POST",
+    });
+    if (res.ok) fetchListings(filter === "ALL" ? undefined : filter);
+  };
+
+  const handleVerify = async (listingId: string) => {
+    const res = await fetch(`/api/admin/listings/${listingId}/verify`, {
+      method: "POST",
+    });
+    if (res.ok) fetchListings(filter === "ALL" ? undefined : filter);
+  };
+
   return (
     <main className="mx-auto max-w-6xl space-y-6 px-4 py-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Listing Review Queue</h1>
           <p className="text-sm text-muted-foreground">
-            {filtered.length} listing{filtered.length !== 1 && "s"}
+            {loading ? "Loading…" : `${filtered.length} listing${filtered.length !== 1 ? "s" : ""}`}
           </p>
         </div>
         <Link
@@ -98,18 +125,24 @@ export default function AdminListingsPage() {
       </nav>
 
       <div className="space-y-3">
-        {filtered.length === 0 && (
+        {loading && (
+          <p className="py-12 text-center text-muted-foreground">Loading listings…</p>
+        )}
+        {!loading && filtered.length === 0 && (
           <p className="py-12 text-center text-muted-foreground">No listings match this filter.</p>
         )}
 
-        {filtered.map((listing) => (
-          <ListingRow
-            key={listing.id}
-            listing={listing}
-            onStatusChange={updateListingStatus}
-            onToggleVerified={toggleVerified}
-          />
-        ))}
+        {!loading &&
+          filtered.map((listing) => (
+            <ListingRow
+              key={listing.id}
+              listing={listing}
+              onApprove={() => handleAction(listing.id, "approve")}
+              onReject={() => handleAction(listing.id, "reject")}
+              onSuspend={() => handleAction(listing.id, "suspend")}
+              onToggleVerified={() => handleVerify(listing.id)}
+            />
+          ))}
       </div>
     </main>
   );
@@ -117,26 +150,38 @@ export default function AdminListingsPage() {
 
 function ListingRow({
   listing,
-  onStatusChange,
+  onApprove,
+  onReject,
+  onSuspend,
   onToggleVerified,
 }: {
   listing: Listing;
-  onStatusChange: (id: string, status: ListingStatus) => void;
-  onToggleVerified: (id: string) => void;
+  onApprove: () => void;
+  onReject: () => void;
+  onSuspend: () => void;
+  onToggleVerified: () => void;
 }) {
   const badge = STATUS_BADGE[listing.status];
+  const photoUrl = listing.photos?.[0];
 
   return (
     <Card className="flex flex-col gap-0 py-0 sm:flex-row sm:items-center">
       <div className="flex flex-1 items-center gap-4 p-4">
-        <div className="relative size-14 shrink-0 overflow-hidden rounded-md">
-          <Image
-            src={listing.photos[0]}
-            alt={listing.title}
-            fill
-            className="object-cover"
-            sizes="56px"
-          />
+        <div className="relative size-14 shrink-0 overflow-hidden rounded-md bg-muted">
+          {photoUrl ? (
+            <Image
+              src={photoUrl}
+              alt={listing.title}
+              fill
+              className="object-cover"
+              sizes="56px"
+              unoptimized={!photoUrl.includes("unsplash")}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+              <Minus className="size-6" />
+            </div>
+          )}
         </div>
 
         <div className="min-w-0 flex-1 space-y-1">
@@ -179,25 +224,17 @@ function ListingRow({
             <Button
               size="sm"
               className="bg-emerald-600 text-white hover:bg-emerald-700"
-              onClick={() => onStatusChange(listing.id, "LIVE")}
+              onClick={onApprove}
             >
               Approve
             </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => onStatusChange(listing.id, "SUSPENDED")}
-            >
+            <Button size="sm" variant="destructive" onClick={onReject}>
               Reject
             </Button>
           </>
         )}
         {listing.status === "LIVE" && (
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => onStatusChange(listing.id, "SUSPENDED")}
-          >
+          <Button size="sm" variant="destructive" onClick={onSuspend}>
             Suspend
           </Button>
         )}
@@ -205,7 +242,7 @@ function ListingRow({
           <Button
             size="sm"
             className="bg-emerald-600 text-white hover:bg-emerald-700"
-            onClick={() => onStatusChange(listing.id, "LIVE")}
+            onClick={onApprove}
           >
             Approve
           </Button>
@@ -213,7 +250,7 @@ function ListingRow({
         <Button
           size="sm"
           variant={listing.verified ? "outline" : "secondary"}
-          onClick={() => onToggleVerified(listing.id)}
+          onClick={onToggleVerified}
           aria-label={listing.verified ? "Remove verification" : "Verify listing"}
         >
           {listing.verified ? "Unverify" : "Verify"}

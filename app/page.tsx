@@ -3,17 +3,18 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Search, MessageSquare, CheckCircle, MapPin, ChevronRight } from "lucide-react";
+import { Search, MessageSquare, CheckCircle, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GeocoderInput, type GeocoderResult } from "@/components/geocoder-input";
 import { useAppStore } from "@/lib/store";
 
 const RADIUS_OPTIONS = [5, 10, 25, 50] as const;
 
 const DESTINATIONS = [
-  { name: "Texas Hill Country", gradient: "from-amber-700 to-orange-500" },
-  { name: "Florida Keys", gradient: "from-cyan-600 to-teal-400" },
-  { name: "Arizona Desert", gradient: "from-red-700 to-amber-500" },
-  { name: "Colorado Mountains", gradient: "from-emerald-700 to-sky-500" },
+  { name: "Texas Hill Country", gradient: "from-amber-700 to-orange-500", lat: 30.27, lng: -98.87 },
+  { name: "Florida Keys", gradient: "from-cyan-600 to-teal-400", lat: 24.66, lng: -81.55 },
+  { name: "Arizona Desert", gradient: "from-red-700 to-amber-500", lat: 33.45, lng: -111.94 },
+  { name: "Colorado Mountains", gradient: "from-emerald-700 to-sky-500", lat: 39.55, lng: -105.78 },
 ] as const;
 
 const STEPS = [
@@ -44,29 +45,44 @@ const FOOTER_LINKS = [
 
 export default function Home() {
   const router = useRouter();
-  const { activeTab, setActiveTab, setSearchFilters } = useAppStore();
+  const { activeTab, setActiveTab } = useAppStore();
 
   const [destination, setDestination] = useState("");
+  const [geo, setGeo] = useState<GeocoderResult | null>(null);
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [moveIn, setMoveIn] = useState("");
   const [radius, setRadius] = useState(25);
 
+  function buildParams(lat: number, lng: number, label: string) {
+    const params = new URLSearchParams({
+      destination: label,
+      lat: String(lat),
+      lng: String(lng),
+      radius: String(radius),
+    });
+    return params;
+  }
+
   function handleSearch(e: FormEvent) {
     e.preventDefault();
-
-    setSearchFilters({ destination, radius });
+    if (!geo) return;
 
     if (activeTab === "stays") {
-      const params = new URLSearchParams({ destination, radius: String(radius) });
+      const params = buildParams(geo.lat, geo.lng, geo.label);
       if (checkIn) params.set("checkIn", checkIn);
       if (checkOut) params.set("checkOut", checkOut);
       router.push(`/stays?${params}`);
     } else {
-      const params = new URLSearchParams({ destination, radius: String(radius) });
+      const params = buildParams(geo.lat, geo.lng, geo.label);
       if (moveIn) params.set("moveIn", moveIn);
       router.push(`/storage?${params}`);
     }
+  }
+
+  function handleDestinationClick(dest: typeof DESTINATIONS[number]) {
+    const params = buildParams(dest.lat, dest.lng, dest.name);
+    router.push(`/stays?${params}`);
   }
 
   return (
@@ -120,22 +136,20 @@ export default function Home() {
             role="tabpanel"
             className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-0 sm:divide-x sm:divide-gray-200"
           >
-            {/* Destination */}
+            {/* Destination (geocoder) */}
             <div className="flex-1 px-2 sm:px-3">
               <label htmlFor="destination" className="mb-1 block text-xs font-medium text-gray-500">
                 Destination
               </label>
-              <div className="flex items-center gap-2">
-                <MapPin className="size-4 shrink-0 text-gray-400" aria-hidden="true" />
-                <input
-                  id="destination"
-                  type="text"
-                  placeholder="Where to?"
-                  value={destination}
-                  onChange={(e) => setDestination(e.target.value)}
-                  className="w-full bg-transparent py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
-                />
-              </div>
+              <GeocoderInput
+                value={destination}
+                onChange={setDestination}
+                onSelect={(result) => {
+                  setGeo(result);
+                  setDestination(result.label);
+                }}
+                placeholder="Where to?"
+              />
             </div>
 
             {/* Date inputs */}
@@ -204,7 +218,8 @@ export default function Home() {
             <div className="px-2 sm:px-1">
               <Button
                 type="submit"
-                className="w-full cursor-pointer rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 sm:w-auto"
+                disabled={!geo}
+                className="w-full cursor-pointer rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
                 <Search className="size-4" aria-hidden="true" />
                 <span>Search</span>
@@ -258,10 +273,10 @@ export default function Home() {
 
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {DESTINATIONS.map((dest) => (
-              <Link
+              <button
                 key={dest.name}
-                href={`/stays?destination=${encodeURIComponent(dest.name)}`}
-                className="group relative flex h-48 items-end overflow-hidden rounded-2xl bg-gradient-to-br p-5 transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+                onClick={() => handleDestinationClick(dest)}
+                className="group relative flex h-48 items-end overflow-hidden rounded-2xl bg-gradient-to-br p-5 text-left transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
                 <div
                   className={`absolute inset-0 bg-gradient-to-br ${dest.gradient} transition-opacity group-hover:opacity-90`}
@@ -275,7 +290,7 @@ export default function Home() {
                     aria-hidden="true"
                   />
                 </div>
-              </Link>
+              </button>
             ))}
           </div>
         </div>

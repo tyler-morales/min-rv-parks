@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { CheckCircle, ArrowLeft } from "lucide-react";
+import { CheckCircle, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,8 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { useAppStore } from "@/lib/store";
-import { formatPrice } from "@/lib/mock-data";
+import { formatPrice } from "@/lib/utils";
+import type { StorageListing } from "@/lib/types";
 
 export default function RequestToStorePage() {
   const params = useParams<{ id: string }>();
@@ -22,25 +22,49 @@ export default function RequestToStorePage() {
 
   const moveIn = searchParams.get("moveIn") ?? "";
 
-  const listing = useAppStore((s) =>
-    s.storageListings.find((l) => l.id === params.id)
-  );
-  const approvedEmails = useAppStore((s) => s.approvedEmails);
-  const addStorageRequest = useAppStore((s) => s.addStorageRequest);
+  const [listing, setListing] = useState<StorageListing | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [months, setMonths] = useState(listing?.minimumMonths ?? 1);
+  const [months, setMonths] = useState(1);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/listings/${params.id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.listingType === "STORAGE") {
+          setListing(data);
+          setMonths(data.minimumMonths ?? 1);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [params.id]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!listing) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-24 text-center">
         <h1 className="text-2xl font-bold">Listing not found</h1>
-        <Button render={<Link href="/" />} nativeButton={false} className="mt-4" variant="outline">
+        <Button
+          render={<Link href="/" />}
+          nativeButton={false}
+          className="mt-4"
+          variant="outline"
+        >
           Back to Home
         </Button>
       </div>
@@ -51,32 +75,38 @@ export default function RequestToStorePage() {
   const monthlyCents = listing.monthlyPriceCents;
   const firstPaymentCents = depositCents + monthlyCents;
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
+    setSubmitting(true);
 
-    if (!approvedEmails.includes(email.toLowerCase())) {
-      setError("NOT_APPROVED");
-      return;
+    try {
+      const res = await fetch("/api/storage-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          listingId: listing!.id,
+          guestName: name,
+          guestEmail: email,
+          guestPhone: phone,
+          message: message || undefined,
+          moveInDate: moveIn,
+          months,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body.error ?? "Something went wrong. Please try again.");
+        return;
+      }
+
+      setSubmitted(true);
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
-
-    addStorageRequest({
-      id: `sr-${Date.now()}`,
-      listingId: listing!.id,
-      listing: listing!,
-      guestName: name,
-      guestEmail: email,
-      guestPhone: phone,
-      message: message || undefined,
-      moveInDate: moveIn,
-      months,
-      depositCents,
-      monthlyPriceCents: monthlyCents,
-      status: "REQUESTED",
-      createdAt: new Date().toISOString().split("T")[0],
-    });
-
-    setSubmitted(true);
   }
 
   if (submitted) {
@@ -88,7 +118,11 @@ export default function RequestToStorePage() {
           The host will review your storage request and respond within 24 hours.
           If accepted, you&apos;ll have 24 hours to complete your first payment.
         </p>
-        <Button render={<Link href="/" />} nativeButton={false} className="mt-8">
+        <Button
+          render={<Link href="/" />}
+          nativeButton={false}
+          className="mt-8"
+        >
           Back to Home
         </Button>
       </div>
@@ -108,7 +142,6 @@ export default function RequestToStorePage() {
       </Button>
 
       <div className="grid gap-10 lg:grid-cols-[1fr_380px]">
-        {/* Left — Form */}
         <div>
           <h1 className="text-2xl font-bold">Request to Store</h1>
 
@@ -176,28 +209,25 @@ export default function RequestToStorePage() {
               />
             </div>
 
-            {error === "NOT_APPROVED" && (
+            {error && (
               <div
                 role="alert"
                 className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
               >
-                Your email is not beta-approved. Please{" "}
-                <Link href="/apply" className="font-medium underline">
-                  apply first
-                </Link>
-                .
+                {error}
               </div>
             )}
 
-            <p className="text-xs text-neutral-500">
-              Only beta-approved guests can submit requests.
-            </p>
-
             <Button
               type="submit"
+              disabled={submitting}
               className="w-full bg-emerald-600 hover:bg-emerald-700"
             >
-              Send Request
+              {submitting ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                "Send Request"
+              )}
             </Button>
           </form>
         </div>
@@ -205,14 +235,17 @@ export default function RequestToStorePage() {
         {/* Right — Summary */}
         <div className="lg:sticky lg:top-24 lg:self-start">
           <Card className="overflow-hidden">
-            <div className="relative aspect-[16/10]">
-              <Image
-                src={listing.photos[0]}
-                alt={listing.title}
-                fill
-                className="object-cover"
-              />
-            </div>
+            {listing.photos[0] && (
+              <div className="relative aspect-[16/10]">
+                <Image
+                  src={listing.photos[0]}
+                  alt={listing.title}
+                  fill
+                  className="object-cover"
+                  unoptimized={!listing.photos[0].includes("unsplash")}
+                />
+              </div>
+            )}
 
             <div className="p-5 space-y-4">
               <div className="flex items-start justify-between gap-2">
@@ -251,13 +284,16 @@ export default function RequestToStorePage() {
               <Separator />
 
               <div className="flex items-center gap-3">
-                <Image
-                  src={listing.host.avatar}
-                  alt={listing.host.name}
-                  width={40}
-                  height={40}
-                  className="rounded-full"
-                />
+                {listing.host.avatar && (
+                  <Image
+                    src={listing.host.avatar}
+                    alt={listing.host.name}
+                    width={40}
+                    height={40}
+                    className="rounded-full"
+                    unoptimized
+                  />
+                )}
                 <div className="text-sm">
                   <p className="font-medium">{listing.host.name}</p>
                   <p className="text-neutral-500">Host</p>

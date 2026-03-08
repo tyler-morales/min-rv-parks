@@ -1,19 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { useAppStore } from "@/lib/store";
-import { formatPrice } from "@/lib/mock-data";
+import { formatPrice } from "@/lib/utils";
 import type { Listing, ListingStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
   LayoutDashboard,
@@ -24,24 +20,49 @@ import {
   Clock,
   CheckCircle2,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 
 const STATUS_STYLES: Record<ListingStatus, { label: string; className: string }> = {
-  DRAFT: { label: "Draft", className: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" },
-  PENDING: { label: "Pending", className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" },
-  LIVE: { label: "Live", className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400" },
-  SUSPENDED: { label: "Suspended", className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" },
+  DRAFT: {
+    label: "Draft",
+    className: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+  },
+  PENDING: {
+    label: "Pending",
+    className:
+      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+  },
+  LIVE: {
+    label: "Live",
+    className:
+      "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
+  },
+  SUSPENDED: {
+    label: "Suspended",
+    className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+  },
 };
+
+interface RequestSummary {
+  id: string;
+  guestName: string;
+  listingTitle: string;
+  type: "STAY" | "STORAGE";
+  status: string;
+  createdAt: string;
+}
 
 export default function HostDashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [listingsLoading, setListingsLoading] = useState(true);
-  const {
-    bookingRequests,
-    storageRequests,
-  } = useAppStore();
+  const [requestStats, setRequestStats] = useState({
+    pendingReqs: 0,
+    confirmed: 0,
+  });
+  const [recentRequests, setRecentRequests] = useState<RequestSummary[]>([]);
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/host/login");
@@ -49,67 +70,84 @@ export default function HostDashboardPage() {
 
   useEffect(() => {
     if (!user) return;
+
     fetch("/api/host/listings")
       .then((res) => (res.ok ? res.json() : []))
-      .then((data) => {
-        setListings(Array.isArray(data) ? data : []);
-      })
+      .then((data) => setListings(Array.isArray(data) ? data : []))
       .catch(() => setListings([]))
       .finally(() => setListingsLoading(false));
+
+    fetch("/api/host/requests")
+      .then((res) => (res.ok ? res.json() : { bookingRequests: [], storageRequests: [] }))
+      .then((data) => {
+        const bookings = data.bookingRequests ?? [];
+        const storage = data.storageRequests ?? [];
+
+        const pendingReqs =
+          bookings.filter((r: { status: string }) => r.status === "REQUESTED").length +
+          storage.filter((r: { status: string }) => r.status === "REQUESTED").length;
+        const confirmed =
+          bookings.filter((r: { status: string }) => r.status === "ACCEPTED").length +
+          storage.filter((r: { status: string }) => r.status === "ACCEPTED").length;
+
+        setRequestStats({ pendingReqs, confirmed });
+
+        const all: RequestSummary[] = [
+          ...bookings.map(
+            (r: Record<string, string>) =>
+              ({
+                id: r.id,
+                guestName: r.guest_name,
+                listingTitle: r.listing_title,
+                type: "STAY" as const,
+                status: r.status,
+                createdAt: r.created_at,
+              }),
+          ),
+          ...storage.map(
+            (r: Record<string, string>) =>
+              ({
+                id: r.id,
+                guestName: r.guest_name,
+                listingTitle: r.listing_title,
+                type: "STORAGE" as const,
+                status: r.status,
+                createdAt: r.created_at,
+              }),
+          ),
+        ];
+        all.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+        setRecentRequests(all.slice(0, 5));
+      })
+      .catch(() => {});
   }, [user]);
-
-  const hostId = user?.id ?? null;
-  const myBookingRequests = useMemo(
-    () => (hostId ? bookingRequests.filter((r) => r.listing.hostId === hostId) : []),
-    [bookingRequests, hostId],
-  );
-
-  const myStorageRequests = useMemo(
-    () => (hostId ? storageRequests.filter((r) => r.listing.hostId === hostId) : []),
-    [storageRequests, hostId],
-  );
-
-  const stats = useMemo(() => {
-    const activeLive = listings.filter((l) => l.status === "LIVE").length;
-    const pendingReqs =
-      myBookingRequests.filter((r) => r.status === "REQUESTED").length +
-      myStorageRequests.filter((r) => r.status === "REQUESTED").length;
-    const confirmed = myBookingRequests.filter(
-      (r) => r.status === "ACCEPTED",
-    ).length;
-    return { activeLive, pendingReqs, confirmed };
-  }, [listings, myBookingRequests, myStorageRequests]);
-
-  const recentRequests = useMemo(() => {
-    const all = [
-      ...myBookingRequests.map((r) => ({
-        id: r.id,
-        guestName: r.guestName,
-        listingTitle: r.listing.title,
-        type: "STAY" as const,
-        status: r.status,
-        createdAt: r.createdAt,
-      })),
-      ...myStorageRequests.map((r) => ({
-        id: r.id,
-        guestName: r.guestName,
-        listingTitle: r.listing.title,
-        type: "STORAGE" as const,
-        status: r.status,
-        createdAt: r.createdAt,
-      })),
-    ];
-    return all
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 5);
-  }, [myBookingRequests, myStorageRequests]);
 
   if (authLoading || !user) return null;
 
+  const activeLive = listings.filter((l) => l.status === "LIVE").length;
+
   const statCards = [
-    { label: "Active Listings", value: stats.activeLive, icon: Home, color: "text-emerald-600" },
-    { label: "Pending Requests", value: stats.pendingReqs, icon: Clock, color: "text-yellow-600" },
-    { label: "Total Bookings", value: stats.confirmed, icon: CheckCircle2, color: "text-blue-600" },
+    {
+      label: "Active Listings",
+      value: activeLive,
+      icon: Home,
+      color: "text-emerald-600",
+    },
+    {
+      label: "Pending Requests",
+      value: requestStats.pendingReqs,
+      icon: Clock,
+      color: "text-yellow-600",
+    },
+    {
+      label: "Total Bookings",
+      value: requestStats.confirmed,
+      icon: CheckCircle2,
+      color: "text-blue-600",
+    },
   ];
 
   return (
@@ -150,8 +188,8 @@ export default function HostDashboardPage() {
 
         {listingsLoading ? (
           <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              Loading listings…
+            <CardContent className="py-8 flex justify-center">
+              <Loader2 className="size-6 animate-spin text-muted-foreground" />
             </CardContent>
           </Card>
         ) : listings.length === 0 ? (
@@ -248,7 +286,8 @@ export default function HostDashboardPage() {
         {recentRequests.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground">
-              No requests yet. They&apos;ll appear here when guests request bookings.
+              No requests yet. They&apos;ll appear here when guests request
+              bookings.
             </CardContent>
           </Card>
         ) : (
@@ -287,9 +326,12 @@ export default function HostDashboardPage() {
 
 function RequestStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    REQUESTED: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-    ACCEPTED: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
-    DECLINED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+    REQUESTED:
+      "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+    ACCEPTED:
+      "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
+    DECLINED:
+      "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
     EXPIRED: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
   };
   return (

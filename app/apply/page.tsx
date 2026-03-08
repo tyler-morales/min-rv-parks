@@ -2,35 +2,51 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useAppStore } from "@/lib/store";
 
 export default function ApplyPage() {
   const router = useRouter();
-  const addBetaApplication = useAppStore((s) => s.addBetaApplication);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    setError("");
+    setSubmitting(true);
 
-    addBetaApplication({
-      id: `app-${Date.now()}`,
-      name,
-      email,
-      phone,
-      notes,
-      status: "PENDING",
-      createdAt: new Date().toISOString().split("T")[0],
-    });
+    try {
+      const res = await fetch("/api/beta/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, phone, notes }),
+      });
 
-    router.push("/apply/success");
+      if (res.status === 409) {
+        setError("An application with this email already exists. We'll be in touch!");
+        return;
+      }
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body.error ?? "Something went wrong. Please try again.");
+        return;
+      }
+
+      router.push("/apply/success");
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -89,11 +105,25 @@ export default function ApplyPage() {
           />
         </div>
 
+        {error && (
+          <div
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+          >
+            {error}
+          </div>
+        )}
+
         <Button
           type="submit"
+          disabled={submitting}
           className="w-full bg-emerald-600 hover:bg-emerald-700"
         >
-          Submit Application
+          {submitting ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            "Submit Application"
+          )}
         </Button>
       </form>
     </div>

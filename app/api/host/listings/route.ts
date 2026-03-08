@@ -36,7 +36,7 @@ export async function GET() {
 
   const listings = (rows ?? []).map((row) =>
     dbListingToFrontend(
-      row as Parameters<typeof dbListingToFrontend>[0],
+      row as unknown as Parameters<typeof dbListingToFrontend>[0],
       host
     )
   );
@@ -69,11 +69,21 @@ export async function POST(request: Request) {
   dbPayload.host_id = user.id;
   dbPayload.status = "DRAFT";
   dbPayload.listing_type = listingType;
-  if (dbPayload.lat == null) {
-    dbPayload.lat = 0;
-    dbPayload.lng = 0;
-    dbPayload.public_lat = 0;
-    dbPayload.public_lng = 0;
+
+  const lat = Number(body.lat);
+  const lng = Number(body.lng);
+  if (Number.isNaN(lat) || Number.isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return NextResponse.json(
+      { error: "Valid location required. Search for a city or place and select it from the list." },
+      { status: 400 }
+    );
+  }
+  dbPayload.lat = lat;
+  dbPayload.lng = lng;
+  if (dbPayload.public_lat == null || dbPayload.public_lng == null) {
+    const jitter = () => (Math.random() - 0.5) * 0.04;
+    dbPayload.public_lat = lat + jitter();
+    dbPayload.public_lng = lng + jitter();
   }
 
   if (listingType === "STAY") {

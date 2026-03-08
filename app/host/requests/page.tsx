@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAppStore } from "@/lib/store";
-import { formatPrice, formatPriceDecimal } from "@/lib/mock-data";
+import { useAuth } from "@/lib/hooks/use-auth";
+import { formatPrice, formatPriceDecimal } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,8 +20,9 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  Loader2,
+  MessageSquare,
 } from "lucide-react";
-import type { RequestStatus } from "@/lib/types";
 
 type FilterTab = "all" | "stays" | "storage" | "pending" | "accepted" | "declined";
 
@@ -31,8 +32,9 @@ interface NormalizedRequest {
   guestName: string;
   guestEmail: string;
   guestPhone: string;
+  guestMessage: string | null;
   listingTitle: string;
-  status: RequestStatus;
+  status: string;
   dateLabel: string;
   priceLabel: string;
   expiresAt?: string;
@@ -68,92 +70,109 @@ const STATUS_STYLES: Record<string, { label: string; className: string }> = {
 
 export default function HostRequestsPage() {
   const router = useRouter();
-  const {
-    isHostLoggedIn,
-    hostId,
-    bookingRequests,
-    storageRequests,
-    updateBookingRequestStatus,
-    updateStorageRequestStatus,
-  } = useAppStore();
+  const { user, loading: authLoading } = useAuth();
+  const [requests, setRequests] = useState<NormalizedRequest[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [emailNotice, setEmailNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isHostLoggedIn) router.replace("/host/login");
-  }, [isHostLoggedIn, router]);
+    if (!authLoading && !user) router.replace("/host/login");
+  }, [user, authLoading, router]);
 
-  const normalizedRequests = useMemo<NormalizedRequest[]>(() => {
-    const bookings: NormalizedRequest[] = bookingRequests
-      .filter((r) => r.listing.hostId === hostId)
-      .map((r) => ({
+  const loadRequests = useCallback(async () => {
+    const res = await fetch("/api/host/requests");
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const bookings: NormalizedRequest[] = (data.bookingRequests ?? []).map(
+      (r: Record<string, string | number>) => ({
         id: r.id,
-        kind: "STAY",
-        guestName: r.guestName,
-        guestEmail: r.guestEmail,
-        guestPhone: r.guestPhone,
-        listingTitle: r.listing.title,
+        kind: "STAY" as const,
+        guestName: r.guest_name,
+        guestEmail: r.guest_email,
+        guestPhone: r.guest_phone,
+        guestMessage: (r.message as string) ?? null,
+        listingTitle: r.listing_title,
         status: r.status,
-        dateLabel: `${fmtDate(r.checkIn)} – ${fmtDate(r.checkOut)}`,
-        priceLabel: `Total: ${formatPriceDecimal(r.totalPriceCents)}`,
-        expiresAt: r.expiresAt,
-        createdAt: r.createdAt,
-      }));
-
-    const storage: NormalizedRequest[] = storageRequests
-      .filter((r) => r.listing.hostId === hostId)
-      .map((r) => ({
-        id: r.id,
-        kind: "STORAGE",
-        guestName: r.guestName,
-        guestEmail: r.guestEmail,
-        guestPhone: r.guestPhone,
-        listingTitle: r.listing.title,
-        status: r.status,
-        dateLabel: `Move-in ${fmtDate(r.moveInDate)} · ${r.months} month${r.months !== 1 ? "s" : ""}`,
-        priceLabel: `${formatPrice(r.monthlyPriceCents)}/mo + ${formatPrice(r.depositCents)} deposit`,
-        expiresAt: r.expiresAt,
-        createdAt: r.createdAt,
-      }));
-
-    return [...bookings, ...storage].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        dateLabel: `${fmtDate(r.check_in as string)} – ${fmtDate(r.check_out as string)}`,
+        priceLabel: `Total: ${formatPriceDecimal(r.total_price_cents as number)}`,
+        expiresAt: r.expires_at as string | undefined,
+        createdAt: r.created_at as string,
+      }),
     );
-  }, [bookingRequests, storageRequests, hostId]);
+
+    const storage: NormalizedRequest[] = (data.storageRequests ?? []).map(
+      (r: Record<string, string | number>) => ({
+        id: r.id,
+        kind: "STORAGE" as const,
+        guestName: r.guest_name,
+        guestEmail: r.guest_email,
+        guestPhone: r.guest_phone,
+        guestMessage: (r.message as string) ?? null,
+        listingTitle: r.listing_title,
+        status: r.status,
+        dateLabel: `Move-in ${fmtDate(r.move_in_date as string)} · ${r.months} month${(r.months as number) !== 1 ? "s" : ""}`,
+        priceLabel: `${formatPrice(r.monthly_price_cents as number)}/mo + ${formatPrice(r.deposit_cents as number)} deposit`,
+        expiresAt: r.expires_at as string | undefined,
+        createdAt: r.created_at as string,
+      }),
+    );
+
+    setRequests(
+      [...bookings, ...storage].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    loadRequests().finally(() => setDataLoading(false));
+  }, [user, loadRequests]);
 
   const filtered = useMemo(() => {
     switch (activeTab) {
       case "stays":
-        return normalizedRequests.filter((r) => r.kind === "STAY");
+        return requests.filter((r) => r.kind === "STAY");
       case "storage":
-        return normalizedRequests.filter((r) => r.kind === "STORAGE");
+        return requests.filter((r) => r.kind === "STORAGE");
       case "pending":
-        return normalizedRequests.filter((r) => r.status === "REQUESTED");
+        return requests.filter((r) => r.status === "REQUESTED");
       case "accepted":
-        return normalizedRequests.filter((r) => r.status === "ACCEPTED");
+        return requests.filter((r) => r.status === "ACCEPTED");
       case "declined":
-        return normalizedRequests.filter((r) => r.status === "DECLINED");
+        return requests.filter((r) => r.status === "DECLINED");
       default:
-        return normalizedRequests;
+        return requests;
     }
-  }, [normalizedRequests, activeTab]);
+  }, [requests, activeTab]);
 
-  function handleAccept(req: NormalizedRequest) {
-    if (req.kind === "STAY") {
-      updateBookingRequestStatus(req.id, "ACCEPTED");
-    } else {
-      updateStorageRequestStatus(req.id, "ACCEPTED");
+  async function handleAction(req: NormalizedRequest, action: "accept" | "decline") {
+    setActionLoading(`${req.id}-${action}`);
+    setEmailNotice(null);
+    const prefix = req.kind === "STAY" ? "booking" : "storage";
+    try {
+      const res = await fetch(`/api/host/${prefix}-requests/${req.id}/${action}`, {
+        method: "POST",
+      });
+      const data = res.ok ? await res.json().catch(() => ({})) : null;
+      if (res.ok) {
+        await loadRequests();
+        if (data?.emailSent === false) {
+          setEmailNotice(
+            "Request updated. Guest was not notified by email — set RESEND_API_KEY in your environment to enable notifications.",
+          );
+          setTimeout(() => setEmailNotice(null), 8000);
+        }
+      }
+    } finally {
+      setActionLoading(null);
     }
   }
 
-  function handleDecline(req: NormalizedRequest) {
-    if (req.kind === "STAY") {
-      updateBookingRequestStatus(req.id, "DECLINED");
-    } else {
-      updateStorageRequestStatus(req.id, "DECLINED");
-    }
-  }
-
-  if (!isHostLoggedIn) return null;
+  if (!user) return null;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -162,50 +181,65 @@ export default function HostRequestsPage() {
         <h1 className="text-2xl font-bold tracking-tight">Requests</h1>
       </div>
 
-      <Tabs
-        value={activeTab}
-        onValueChange={(v) => setActiveTab(v as FilterTab)}
-      >
-        <TabsList className="mb-6 flex-wrap">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="stays">Stays</TabsTrigger>
-          <TabsTrigger value="storage">Storage</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="accepted">Accepted</TabsTrigger>
-          <TabsTrigger value="declined">Declined</TabsTrigger>
-        </TabsList>
+      {emailNotice && (
+        <p className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200" role="alert">
+          {emailNotice}
+        </p>
+      )}
 
-        <TabsContent value={activeTab}>
-          {filtered.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                No requests match this filter.
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {filtered.map((req) => (
-                <RequestCard
-                  key={req.id}
-                  req={req}
-                  onAccept={() => handleAccept(req)}
-                  onDecline={() => handleDecline(req)}
-                />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+      {dataLoading ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="size-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as FilterTab)}
+        >
+          <TabsList className="mb-6 flex-wrap">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="stays">Stays</TabsTrigger>
+            <TabsTrigger value="storage">Storage</TabsTrigger>
+            <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="accepted">Accepted</TabsTrigger>
+            <TabsTrigger value="declined">Declined</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value={activeTab}>
+            {filtered.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  No requests match this filter.
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {filtered.map((req) => (
+                  <RequestCard
+                    key={req.id}
+                    req={req}
+                    actionLoading={actionLoading}
+                    onAccept={() => handleAction(req, "accept")}
+                    onDecline={() => handleAction(req, "decline")}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }
 
 function RequestCard({
   req,
+  actionLoading,
   onAccept,
   onDecline,
 }: {
   req: NormalizedRequest;
+  actionLoading: string | null;
   onAccept: () => void;
   onDecline: () => void;
 }) {
@@ -214,7 +248,6 @@ function RequestCard({
   return (
     <Card>
       <CardContent className="flex flex-col gap-4">
-        {/* Header: guest + status */}
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <h3 className="font-semibold">{req.guestName}</h3>
@@ -248,9 +281,20 @@ function RequestCard({
           </div>
         </div>
 
+        {(req.guestMessage ?? "").trim() ? (
+          <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+            <span className="flex items-center gap-1.5 font-medium text-muted-foreground" id={`request-${req.id}-message-label`}>
+              <MessageSquare className="size-3.5" aria-hidden />
+              Message from guest
+            </span>
+            <p className="mt-1 whitespace-pre-wrap text-foreground" aria-labelledby={`request-${req.id}-message-label`}>
+              {req.guestMessage}
+            </p>
+          </div>
+        ) : null}
+
         <Separator />
 
-        {/* Details */}
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
           <span className="font-medium">{req.listingTitle}</span>
           <span className="flex items-center gap-1 text-muted-foreground">
@@ -263,24 +307,35 @@ function RequestCard({
           </span>
         </div>
 
-        {/* Actions for REQUESTED */}
         {req.status === "REQUESTED" && (
           <div className="flex items-center gap-3 pt-1">
             <Button
               className="bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-600/50"
+              disabled={actionLoading === `${req.id}-accept`}
               onClick={onAccept}
             >
-              <CheckCircle2 className="size-4" />
+              {actionLoading === `${req.id}-accept` ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="size-4" />
+              )}
               Accept
             </Button>
-            <Button variant="destructive" onClick={onDecline}>
-              <XCircle className="size-4" />
+            <Button
+              variant="destructive"
+              disabled={actionLoading === `${req.id}-decline`}
+              onClick={onDecline}
+            >
+              {actionLoading === `${req.id}-decline` ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <XCircle className="size-4" />
+              )}
               Decline
             </Button>
           </div>
         )}
 
-        {/* Info for ACCEPTED */}
         {req.status === "ACCEPTED" && req.expiresAt && (
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <span className="flex items-center gap-1 text-amber-600">
@@ -320,7 +375,7 @@ function ExpiryCountdown({ expiresAt }: { expiresAt: string }) {
 }
 
 function fmtDate(iso: string): string {
-  return new Date(iso + "T00:00:00").toLocaleDateString("en-US", {
+  return new Date(iso + (iso.includes("T") ? "" : "T00:00:00")).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
   });

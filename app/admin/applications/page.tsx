@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Shield, ChevronDown, ChevronUp } from "lucide-react";
-import { useAppStore } from "@/lib/store";
+import { Shield, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { useAuth } from "@/lib/hooks/use-auth";
 import type { ApplicationStatus, BetaApplication } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,26 +25,62 @@ const FILTER_TABS: { value: FilterTab; label: string }[] = [
 ];
 
 export default function AdminApplicationsPage() {
-  const isAdmin = useAppStore((s) => s.isAdmin);
-  const betaApplications = useAppStore((s) => s.betaApplications);
-  const updateApplicationStatus = useAppStore((s) => s.updateApplicationStatus);
-
+  const { isAdmin, loading: authLoading } = useAuth();
+  const [applications, setApplications] = useState<BetaApplication[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterTab>("ALL");
 
-  const sorted = useMemo(
-    () =>
-      [...betaApplications].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      ),
-    [betaApplications],
-  );
+  const fetchApplications = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/beta_applications");
+      if (res.ok) {
+        const rows = await res.json();
+        setApplications(
+          rows.map((r: Record<string, unknown>) => ({
+            id: r.id,
+            name: r.name,
+            email: r.email,
+            phone: r.phone,
+            notes: r.notes ?? "",
+            status: r.status,
+            createdAt: r.created_at,
+          })),
+        );
+      }
+    } catch {
+      // silently fail; admin can reload
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading && isAdmin) fetchApplications();
+  }, [authLoading, isAdmin, fetchApplications]);
 
   const filtered = useMemo(
-    () => (filter === "ALL" ? sorted : sorted.filter((a) => a.status === filter)),
-    [sorted, filter],
+    () =>
+      filter === "ALL"
+        ? applications
+        : applications.filter((a) => a.status === filter),
+    [applications, filter],
   );
 
-  if (!isAdmin) {
+  async function handleStatusChange(id: string, status: ApplicationStatus) {
+    const action = status === "APPROVED" ? "approve" : "reject";
+    try {
+      const res = await fetch(`/api/admin/beta_applications/${id}/${action}`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        await fetchApplications();
+      }
+    } catch {
+      // silently fail
+    }
+  }
+
+  if (!authLoading && !isAdmin) {
     return (
       <main className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4">
         <Shield className="size-12 text-muted-foreground" />
@@ -56,6 +92,14 @@ export default function AdminApplicationsPage() {
           Go to Host Login
         </Link>
       </main>
+    );
+  }
+
+  if (authLoading || loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+      </div>
     );
   }
 
@@ -104,7 +148,7 @@ export default function AdminApplicationsPage() {
           <ApplicationRow
             key={app.id}
             application={app}
-            onStatusChange={updateApplicationStatus}
+            onStatusChange={handleStatusChange}
           />
         ))}
       </div>

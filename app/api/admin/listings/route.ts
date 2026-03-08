@@ -56,13 +56,13 @@ export async function GET(request: Request) {
 
   const listings = (rows ?? []).map((row: Record<string, unknown>) => {
     const host = profileMap.get(row.host_id as string) ?? {
-      id: row.host_id,
+      id: String(row.host_id),
       full_name: null,
       avatar_url: null,
       email: "",
     };
     return dbListingToFrontend(
-      row as Parameters<typeof dbListingToFrontend>[0],
+      row as unknown as Parameters<typeof dbListingToFrontend>[0],
       host
     );
   });
