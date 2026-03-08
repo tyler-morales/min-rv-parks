@@ -53,6 +53,8 @@
 
 ## Before production deploy
 
+- **Link preview image:** Add `public/og-image.png` (1200×630, JPG/PNG/WEBP) for Open Graph and Twitter card previews. Root layout now sets `og:image`, `og:title`, `og:description`, `og:url`, `og:site_name`, `twitter:card`, `twitter:image`, `twitter:title`, `twitter:description`; image URL resolves via `metadataBase` from `NEXT_PUBLIC_APP_URL`.
+- **Prod URL in Vercel:** Set `NEXT_PUBLIC_APP_URL` in Vercel env to your live URL (e.g. `https://min-rv-parks-gvdhnrr0j-tyler-morales-projects.vercel.app`) so canonical/og:image and payment redirects use the correct base; otherwise the app falls back to `VERCEL_URL`, which may differ per branch deploy.
 - **Resend email**: In Vercel (or wherever prod runs), either **omit** `RESEND_FROM` so the app uses `noreply@minirvparks.com` (after verifying the domain in the Resend dashboard), or set `RESEND_FROM=Mini RV Parks <noreply@minirvparks.com>` explicitly. Do not use the sandbox address (`onboarding@resend.dev`) in production.
 
 ### Reminder: Before going live with payments (do these when you have a live URL)
@@ -107,3 +109,4 @@ When you have a domain (e.g. minirvparks.com):
 - **Milestone 3**: Removed `bookingRequests`, `storageRequests`, `stayListings`, `storageListings` and all mock-data-backed actions from Zustand store. `/book/[id]`, `/store/[id]`, `/book/[id]/confirm`, `/store/[id]/confirm` now fetch listing from API. `/host/requests` and `/host/dashboard` fetch request data from `/api/host/requests` instead of store. Removed debug agent logging from middleware.
 - **Milestone 4**: Replaced mock payment pages (`/book/[id]/confirm`, `/store/[id]/confirm`) with real Stripe Checkout flow. Mock `onClick={() => setPaid(true)}` replaced with API call → Stripe redirect. Removed "This is a demo. No real payment is processed." notices. Updated `sendRequestAccepted` email from "You'll receive a payment link shortly" to a direct "Complete Payment" button with URL.
 - **Milestone 5**: Removed `betaApplications`, `approvedEmails`, `addBetaApplication`, `updateApplicationStatus` from Zustand store and `BetaApplication` mock data. Admin dashboard no longer imports `useAppStore`. Apply page no longer writes to client state — all beta data now lives in Postgres.
+- **node-domexception deprecation**: Removed `shadcn` from dependencies (it pulled in node-fetch → fetch-blob → node-domexception). Use `npx shadcn@latest add <component>` when adding UI components; `components.json` and existing UI components unchanged.
