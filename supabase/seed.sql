@@ -1,0 +1,6 @@
+-- Optional seed for local/dev. Run after migrations and after at least one user has signed up.
+--
+-- To promote your user to admin (run in SQL editor with your user id from Auth > Users):
+--   UPDATE public.profiles SET role = 'admin' WHERE id = 'your-auth-user-uuid';
+--
+-- No listing seed here: create listings via the host dashboard after signing up.
