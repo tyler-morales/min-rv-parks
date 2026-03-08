@@ -122,6 +122,10 @@ export function frontendToDbListing(body: Record<string, unknown>): Record<strin
   const map: Record<string, string> = {
     listingType: "listing_type",
     nearTown: "near_town",
+    lat: "lat",
+    lng: "lng",
+    publicLat: "public_lat",
+    publicLng: "public_lng",
     maxRigLength: "max_rig_length",
     slideOutsAllowed: "slide_outs_allowed",
     pullThrough: "pull_through",

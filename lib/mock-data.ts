@@ -4,7 +4,6 @@ import type {
   Host,
   BookingRequest,
   StorageRequest,
-  BetaApplication,
 } from "./types";
 
 const hosts: Host[] = [
@@ -618,56 +617,6 @@ export const storageRequests: StorageRequest[] = [
     createdAt: "2026-03-06",
   },
 ];
-
-export const betaApplications: BetaApplication[] = [
-  {
-    id: "app-1",
-    name: "Sarah Johnson",
-    email: "sarah@example.com",
-    phone: "(512) 555-0101",
-    notes: "Full-time RVer, currently traveling through Texas. Found you through Instagram.",
-    status: "APPROVED",
-    createdAt: "2026-02-20",
-  },
-  {
-    id: "app-2",
-    name: "Mike Chen",
-    email: "mike@example.com",
-    phone: "(210) 555-0202",
-    notes: "Weekend warrior with a 32ft travel trailer. Looking for better spots than big parks.",
-    status: "APPROVED",
-    createdAt: "2026-02-22",
-  },
-  {
-    id: "app-3",
-    name: "Amy Rodriguez",
-    email: "amy@example.com",
-    phone: "(713) 555-0601",
-    notes: "Just bought our first RV and looking for unique places to stay near Houston.",
-    status: "PENDING",
-    createdAt: "2026-03-05",
-  },
-  {
-    id: "app-4",
-    name: "Jake Thompson",
-    email: "jake@example.com",
-    phone: "(214) 555-0701",
-    notes: "Retired, traveling with my wife. We prefer small, quiet spots over big RV parks.",
-    status: "PENDING",
-    createdAt: "2026-03-06",
-  },
-  {
-    id: "app-5",
-    name: "Emily Watson",
-    email: "emily@example.com",
-    phone: "(480) 555-0303",
-    notes: "Remote worker, need storage + occasional stays near Phoenix.",
-    status: "REJECTED",
-    createdAt: "2026-02-25",
-  },
-];
-
-export const approvedEmails = ["sarah@example.com", "mike@example.com", "robert@example.com", "lisa@example.com"];
 
 export function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(0)}`;

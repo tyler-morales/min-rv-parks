@@ -49,6 +49,8 @@ export interface BaseListing {
   publicLat: number;
   publicLng: number;
   photos: string[];
+  /** Present when loaded from host listing GET; used for photo delete. */
+  photoIds?: string[];
   status: ListingStatus;
   verified: boolean;
   hostId: string;
@@ -99,6 +101,7 @@ export interface BookingRequest {
   totalPriceCents: number;
   status: RequestStatus;
   expiresAt?: string;
+  stripeSessionId?: string;
   createdAt: string;
 }
 
@@ -116,6 +119,39 @@ export interface StorageRequest {
   monthlyPriceCents: number;
   status: RequestStatus;
   expiresAt?: string;
+  stripeSessionId?: string;
+  createdAt: string;
+}
+
+export interface Booking {
+  id: string;
+  bookingRequestId: string;
+  listingId: string;
+  guestName: string;
+  guestEmail: string;
+  checkIn: string;
+  checkOut: string;
+  totalPriceCents: number;
+  stripeSessionId: string;
+  stripePaymentIntentId?: string;
+  status: BookingStatus;
+  paidAt: string;
+  createdAt: string;
+}
+
+export interface StorageContract {
+  id: string;
+  storageRequestId: string;
+  listingId: string;
+  guestName: string;
+  guestEmail: string;
+  moveInDate: string;
+  monthlyPriceCents: number;
+  depositCents: number;
+  stripeSessionId: string;
+  stripePaymentIntentId?: string;
+  status: ContractStatus;
+  paidAt: string;
   createdAt: string;
 }
 
