@@ -1,31 +1,28 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendStayRequestToHost, sendStayRequestToGuest } from "@/lib/email";
+import { genericServerError } from "@/lib/api-error";
+import { bookingRequestSchema, parseAndValidate } from "@/lib/validations/api";
 import { NextResponse } from "next/server";
 
+const MAX_BODY_BYTES = 64 * 1024;
+
 export async function POST(request: Request) {
-  let body: Record<string, unknown>;
+  const contentLength = request.headers.get("content-length");
+  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
+    return NextResponse.json({ error: "Request too large" }, { status: 400 });
+  }
+  let body: unknown;
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { listingId, guestName, guestEmail, guestPhone, message, checkIn, checkOut } = body as {
-    listingId?: string;
-    guestName?: string;
-    guestEmail?: string;
-    guestPhone?: string;
-    message?: string;
-    checkIn?: string;
-    checkOut?: string;
-  };
-
-  if (!listingId || !guestName || !guestEmail || !guestPhone || !checkIn || !checkOut) {
-    return NextResponse.json(
-      { error: "listingId, guestName, guestEmail, guestPhone, checkIn, checkOut are required" },
-      { status: 400 },
-    );
+  const parsed = parseAndValidate(body, bookingRequestSchema);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.errorMessage }, { status: 400 });
   }
+  const { listingId, guestName, guestEmail, guestPhone, message, checkIn, checkOut } = parsed.data;
 
   const supabase = createAdminClient();
 
@@ -33,7 +30,7 @@ export async function POST(request: Request) {
   const { data: approval } = await supabase
     .from("beta_applications")
     .select("status")
-    .eq("email", (guestEmail as string).toLowerCase().trim())
+    .eq("email", guestEmail)
     .eq("status", "APPROVED")
     .maybeSingle();
 
@@ -89,7 +86,7 @@ export async function POST(request: Request) {
     .single();
 
   if (insertErr) {
-    return NextResponse.json({ error: insertErr.message }, { status: 500 });
+    return genericServerError("booking-requests", insertErr.message);
   }
 
   // Fetch host info for email
@@ -112,7 +109,7 @@ export async function POST(request: Request) {
       checkIn,
       checkOut,
       totalPriceCents,
-      message: message as string | undefined,
+      message: message ?? undefined,
     }).catch(console.error);
   }
 

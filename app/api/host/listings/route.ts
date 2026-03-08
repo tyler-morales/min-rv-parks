@@ -1,6 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { dbListingToFrontend, frontendToDbListing } from "@/lib/api/listings";
+import { genericServerError } from "@/lib/api-error";
+import { createListingSchema, parseAndValidate } from "@/lib/validations/api";
 import { NextResponse } from "next/server";
+
+const MAX_BODY_BYTES = 128 * 1024;
 
 export async function GET() {
   const supabase = await createClient();
@@ -18,7 +22,7 @@ export async function GET() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return genericServerError("host/listings GET", error.message);
   }
 
   const { data: profile } = await supabase
@@ -53,6 +57,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const contentLength = request.headers.get("content-length");
+  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
+    return NextResponse.json({ error: "Request too large" }, { status: 400 });
+  }
   let body: Record<string, unknown>;
   try {
     body = await request.json();
@@ -60,10 +68,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const listingType = body.listingType as "STAY" | "STORAGE";
-  if (!listingType || !["STAY", "STORAGE"].includes(listingType)) {
-    return NextResponse.json({ error: "listingType must be STAY or STORAGE" }, { status: 400 });
+  const parsed = parseAndValidate(body, createListingSchema);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.errorMessage }, { status: 400 });
   }
+  const listingType = parsed.data.listingType;
 
   const dbPayload = frontendToDbListing(body) as Record<string, unknown>;
   dbPayload.host_id = user.id;
@@ -100,7 +109,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return genericServerError("host/listings POST", error.message);
   }
 
   return NextResponse.json({ id: data.id });

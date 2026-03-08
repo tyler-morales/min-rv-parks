@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { genericServerError } from "@/lib/api-error";
 import { NextResponse } from "next/server";
 
 export async function POST(
@@ -35,11 +36,11 @@ export async function POST(
     .select("id, status")
     .single();
 
-  if (error || !app) {
-    return NextResponse.json(
-      { error: error?.message ?? "Application not found" },
-      { status: error ? 500 : 404 },
-    );
+  if (error) {
+    return genericServerError("admin/beta_applications/[id]/reject", error.message);
+  }
+  if (!app) {
+    return NextResponse.json({ error: "Application not found" }, { status: 404 });
   }
 
   return NextResponse.json({ id: app.id, status: app.status });

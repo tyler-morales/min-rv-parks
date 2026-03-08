@@ -1,8 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
+import { genericServerError } from "@/lib/api-error";
+import { validateListingPhoto } from "@/lib/upload-validation";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 
 const BUCKET = "listing-photos";
+const MAX_PHOTOS_PER_LISTING = 20;
 
 export async function POST(
   request: Request,
@@ -28,21 +31,44 @@ export async function POST(
     return NextResponse.json({ error: "Listing not found" }, { status: 404 });
   }
 
+  const { count } = await supabase
+    .from("listing_photos")
+    .select("id", { count: "exact", head: true })
+    .eq("listing_id", listingId);
+  if ((count ?? 0) >= MAX_PHOTOS_PER_LISTING) {
+    return NextResponse.json(
+      { error: "Maximum number of photos per listing reached." },
+      { status: 400 },
+    );
+  }
+
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
   if (!file || !file.size) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
 
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  let mime: string;
+  let ext: string;
+  try {
+    const validated = await validateListingPhoto(file);
+    mime = validated.mime;
+    ext = validated.ext;
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid or unsupported image" },
+      { status: 400 },
+    );
+  }
+
   const path = `${listingId}/${randomUUID()}.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
-    .upload(path, file, { contentType: file.type || "image/jpeg" });
+    .upload(path, file, { contentType: mime });
 
   if (uploadError) {
-    return NextResponse.json({ error: uploadError.message }, { status: 500 });
+    return genericServerError("host/listings/[id]/photos", uploadError.message);
   }
 
   const {
@@ -70,7 +96,7 @@ export async function POST(
     .single();
 
   if (insertError) {
-    return NextResponse.json({ error: insertError.message }, { status: 500 });
+    return genericServerError("host/listings/[id]/photos", insertError.message);
   }
 
   return NextResponse.json({ id: photoRow.id, url: photoRow.url });

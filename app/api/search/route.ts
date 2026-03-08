@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rpcRowToStay } from "@/lib/api/search";
+import { genericServerError } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -37,24 +38,12 @@ export async function GET(request: NextRequest) {
     });
 
     if (error) {
-      return NextResponse.json(
-        { error: "Search failed", details: error.message },
-        { status: 500 },
-      );
+      return genericServerError("search", error.message);
     }
 
     const listings = (data ?? []).map(rpcRowToStay);
     return NextResponse.json(listings);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    const stack = err instanceof Error ? err.stack : undefined;
-    return NextResponse.json(
-      {
-        error: "Search failed",
-        details: message,
-        ...(process.env.NODE_ENV === "development" && stack && { stack }),
-      },
-      { status: 500 },
-    );
+    return genericServerError("search", err);
   }
 }

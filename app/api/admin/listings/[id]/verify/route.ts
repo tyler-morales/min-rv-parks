@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { genericServerError } from "@/lib/api-error";
 import { NextResponse } from "next/server";
 
 export async function POST(
@@ -45,7 +46,7 @@ export async function POST(
     .eq("id", id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return genericServerError("admin/listings/[id]/verify", error.message);
   }
 
   return NextResponse.json({ ok: true, verified: !listing.verified });

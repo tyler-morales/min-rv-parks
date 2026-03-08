@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { dbListingToFrontend } from "@/lib/api/listings";
+import { genericServerError } from "@/lib/api-error";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -34,10 +35,11 @@ export async function GET(
     .single();
 
   if (error || !row) {
-    return NextResponse.json(
-      { error: error?.message ?? "Not found" },
-      { status: error?.code === "PGRST116" ? 404 : 500 }
-    );
+    if (error?.code === "PGRST116") {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    if (error) return genericServerError("admin/listings/[id] GET", error.message);
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   const { data: hostProfile } = await admin
