@@ -23,11 +23,11 @@ export function Nav() {
   if (isHost || isAdminArea) return <DashboardNav isAdmin={isAdmin} onSignOut={async () => { await signOut(); router.push("/"); }} />;
 
   return (
-    <nav className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+    <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2">
-            <Truck className="h-7 w-7 text-emerald-600" />
+            <Truck className="size-7 text-primary" data-icon="inline-start" />
             <span className="text-lg font-bold tracking-tight">Mini RV Parks</span>
           </Link>
 
@@ -37,8 +37,8 @@ export function Nav() {
               className={cn(
                 "rounded-full px-4 py-2 text-sm font-medium transition-colors",
                 isStays
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "text-gray-600 hover:bg-gray-100"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted"
               )}
             >
               Stays
@@ -48,8 +48,8 @@ export function Nav() {
               className={cn(
                 "rounded-full px-4 py-2 text-sm font-medium transition-colors",
                 isStorage
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "text-gray-600 hover:bg-gray-100"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted"
               )}
             >
               Storage
@@ -60,7 +60,7 @@ export function Nav() {
         <div className="hidden items-center gap-3 md:flex">
           <Link
             href="/apply"
-            className="rounded-full px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+            className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
           >
             Join Beta
           </Link>
@@ -68,13 +68,13 @@ export function Nav() {
             <>
               <Link
                 href="/host/dashboard"
-                className="rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-full border border-input px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
               >
                 Dashboard
               </Link>
               <Link
                 href={isAdmin ? "/admin" : "/host/dashboard"}
-                className="rounded-full px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
               >
                 {isAdmin ? "Admin" : "My Listings"}
               </Link>
@@ -82,7 +82,7 @@ export function Nav() {
           ) : (
             <Link
               href="/host/login"
-              className="rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-full border border-input px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
             >
               Host Login
             </Link>
@@ -94,7 +94,7 @@ export function Nav() {
           className="rounded-md p-2 md:hidden"
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
         >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {mobileOpen ? <X className="size-5" data-icon="inline-start" /> : <Menu className="size-5" data-icon="inline-start" />}
         </button>
       </div>
 
@@ -106,7 +106,7 @@ export function Nav() {
               onClick={() => setMobileOpen(false)}
               className={cn(
                 "rounded-lg px-3 py-2 text-sm font-medium",
-                isStays ? "bg-emerald-50 text-emerald-700" : "text-gray-600"
+                isStays ? "bg-primary/10 text-primary" : "text-muted-foreground"
               )}
             >
               Stays
@@ -116,7 +116,7 @@ export function Nav() {
               onClick={() => setMobileOpen(false)}
               className={cn(
                 "rounded-lg px-3 py-2 text-sm font-medium",
-                isStorage ? "bg-emerald-50 text-emerald-700" : "text-gray-600"
+                isStorage ? "bg-primary/10 text-primary" : "text-muted-foreground"
               )}
             >
               Storage
@@ -124,7 +124,7 @@ export function Nav() {
             <Link
               href="/apply"
               onClick={() => setMobileOpen(false)}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground"
             >
               Join Beta
             </Link>
@@ -133,14 +133,14 @@ export function Nav() {
                 <Link
                   href="/host/dashboard"
                   onClick={() => setMobileOpen(false)}
-                  className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600"
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground"
                 >
                   Dashboard
                 </Link>
                 <Link
                   href={isAdmin ? "/admin" : "/host/dashboard"}
                   onClick={() => setMobileOpen(false)}
-                  className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600"
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground"
                 >
                   {isAdmin ? "Admin" : "My Listings"}
                 </Link>
@@ -149,7 +149,7 @@ export function Nav() {
               <Link
                 href="/host/login"
                 onClick={() => setMobileOpen(false)}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600"
+                className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground"
               >
                 Host Login
               </Link>
@@ -171,14 +171,14 @@ function DashboardNav({
   const pathname = usePathname();
 
   return (
-    <nav className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur">
+    <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2">
-            <Truck className="h-7 w-7 text-emerald-600" />
+            <Truck className="size-7 text-primary" data-icon="inline-start" />
             <span className="text-lg font-bold tracking-tight">Mini RV Parks</span>
           </Link>
-          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gray-600">
+          <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {isAdmin ? "Admin" : "Host"}
           </span>
         </div>

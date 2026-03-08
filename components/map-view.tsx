@@ -90,7 +90,7 @@ export function MapView({ listings, centerLat, centerLng }: Props) {
           >
             <button
               aria-label={`View ${listing.title}`}
-              className="flex items-center gap-1 rounded-full bg-white px-2 py-1 text-xs font-bold text-emerald-800 shadow-md ring-1 ring-emerald-200 transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              className="flex items-center gap-1 rounded-full bg-background px-2 py-1 text-xs font-bold text-primary shadow-md ring-1 ring-border transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <MapPin className="size-3" />
               {isStay(listing)
@@ -113,7 +113,7 @@ export function MapView({ listings, centerLat, centerLng }: Props) {
           >
             <Link
               href={isStay(selected) ? `/stays/${selected.id}` : `/storage/${selected.id}`}
-              className="block space-y-2 p-1 no-underline"
+              className="flex flex-col gap-2 p-1 no-underline"
             >
               {selected.photos[0] && (
                 <div className="relative aspect-[4/3] overflow-hidden rounded-md">
@@ -130,7 +130,7 @@ export function MapView({ listings, centerLat, centerLng }: Props) {
                 {selected.title}
               </p>
               <p className="text-xs text-muted-foreground">Near {selected.nearTown}</p>
-              <p className="font-bold text-emerald-700">
+              <p className="font-bold text-primary">
                 {isStay(selected)
                   ? `${formatPrice(selected.nightlyPriceCents)} / night`
                   : `${formatPrice(selected.monthlyPriceCents)} / month`}

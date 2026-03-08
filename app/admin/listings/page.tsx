@@ -91,7 +91,7 @@ export default function AdminListingsPage() {
   };
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 px-4 py-8">
+    <main className="mx-auto max-w-6xl flex flex-col gap-6 px-4 py-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Listing Review Queue</h1>
@@ -124,7 +124,7 @@ export default function AdminListingsPage() {
         ))}
       </nav>
 
-      <div className="space-y-3">
+      <div className="flex flex-col gap-3">
         {loading && (
           <p className="py-12 text-center text-muted-foreground">Loading listings…</p>
         )}
@@ -184,7 +184,7 @@ function ListingRow({
           )}
         </div>
 
-        <div className="min-w-0 flex-1 space-y-1">
+        <div className="min-w-0 flex-1 flex flex-col gap-1">
           <Link
             href={`/admin/listings/${listing.id}`}
             className="line-clamp-1 font-medium hover:text-emerald-600 hover:underline focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:outline-none"

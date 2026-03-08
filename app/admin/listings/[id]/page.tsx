@@ -98,7 +98,7 @@ export default function AdminListingDetailPage() {
   const badge = STATUS_BADGE[listing.status];
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+    <main className="mx-auto max-w-5xl flex flex-col gap-6 px-4 py-8">
       <Link
         href="/admin/listings"
         className="inline-flex items-center gap-1 text-sm text-emerald-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
@@ -182,7 +182,7 @@ export default function AdminListingDetailPage() {
           <CardHeader>
             <CardTitle>{listing.title}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">{listing.description}</p>
             <Separator />
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">

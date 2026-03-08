@@ -87,7 +87,7 @@ export default function StayDetailPage() {
           href="/"
           className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <ChevronLeft className="mr-1 h-4 w-4" />
+          <ChevronLeft className="mr-1 size-4" data-icon="inline-start" />
           Back to search
         </Link>
       </main>
@@ -109,7 +109,7 @@ export default function StayDetailPage() {
         className="mb-4 inline-flex items-center text-sm text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
         aria-label="Back to search results"
       >
-        <ChevronLeft className="mr-1 h-4 w-4" />
+        <ChevronLeft className="mr-1 size-4" data-icon="inline-start" />
         Back
       </Link>
 
@@ -154,10 +154,10 @@ export default function StayDetailPage() {
           )}
           <button
             type="button"
-            className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-medium text-gray-900 shadow backdrop-blur focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+            className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow backdrop-blur focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label={`Show all ${listing.photos.length} photos`}
           >
-            <Images className="h-4 w-4" />
+            <Images className="size-4" data-icon="inline-start" />
             Show all photos
           </button>
         </div>
@@ -168,11 +168,11 @@ export default function StayDetailPage() {
         <div className="lg:col-span-2">
           <h1 className="text-2xl font-bold">{listing.title}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4" aria-hidden="true" />
+            <MapPin className="size-4" aria-hidden="true" />
             <span>Near {listing.nearTown}</span>
             {listing.verified && (
-              <Badge variant="secondary" className="ml-1 gap-1 text-emerald-700">
-                <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
+              <Badge variant="secondary" className="ml-1 gap-1 text-primary">
+                <BadgeCheck className="size-3.5" aria-hidden="true" />
                 Verified
               </Badge>
             )}
@@ -186,9 +186,9 @@ export default function StayDetailPage() {
           <section aria-labelledby="rv-fit-heading">
             <h2 id="rv-fit-heading" className="mb-4 text-lg font-semibold">RV Fit</h2>
             <div className="grid grid-cols-3 gap-4">
-              <FitItem icon={<Ruler className="h-5 w-5" />} label="Max rig length" value={`${listing.maxRigLength} ft`} />
-              <FitItem icon={<ArrowLeftRight className="h-5 w-5" />} label="Slide-outs" value={listing.slideOutsAllowed ? "Yes" : "No"} />
-              <FitItem icon={<MoveRight className="h-5 w-5" />} label="Pull-through" value={listing.pullThrough ? "Yes" : "No"} />
+              <FitItem icon={<Ruler className="size-5" />} label="Max rig length" value={`${listing.maxRigLength} ft`} />
+              <FitItem icon={<ArrowLeftRight className="size-5" />} label="Slide-outs" value={listing.slideOutsAllowed ? "Yes" : "No"} />
+              <FitItem icon={<MoveRight className="size-5" />} label="Pull-through" value={listing.pullThrough ? "Yes" : "No"} />
             </div>
           </section>
 
@@ -197,10 +197,10 @@ export default function StayDetailPage() {
           <section aria-labelledby="hookups-heading">
             <h2 id="hookups-heading" className="mb-4 text-lg font-semibold">Hookups &amp; Features</h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              <HookupRow icon={<Zap className="h-5 w-5 text-amber-500" />} label="Electric" value={electricLabel} available={listing.electric !== "NONE"} />
-              <HookupRow icon={<Droplets className="h-5 w-5 text-blue-500" />} label="Water" value={listing.water ? "Yes" : "No"} available={listing.water} />
-              <HookupRow icon={<Pipette className="h-5 w-5 text-gray-500" />} label="Sewage" value={listing.sewage ? "Yes" : "No"} available={listing.sewage} />
-              <HookupRow icon={<Flame className="h-5 w-5 text-orange-500" />} label="Gas (propane)" value={listing.gas ? "Yes" : "No"} available={listing.gas} />
+              <HookupRow icon={<Zap className="size-5 text-amber-500" />} label="Electric" value={electricLabel} available={listing.electric !== "NONE"} />
+              <HookupRow icon={<Droplets className="size-5 text-primary" />} label="Water" value={listing.water ? "Yes" : "No"} available={listing.water} />
+              <HookupRow icon={<Pipette className="size-5 text-muted-foreground" />} label="Sewage" value={listing.sewage ? "Yes" : "No"} available={listing.sewage} />
+              <HookupRow icon={<Flame className="size-5 text-orange-500" />} label="Gas (propane)" value={listing.gas ? "Yes" : "No"} available={listing.gas} />
             </div>
           </section>
 
@@ -208,13 +208,13 @@ export default function StayDetailPage() {
 
           <section aria-labelledby="rules-heading">
             <h2 id="rules-heading" className="mb-3 text-lg font-semibold">Rules</h2>
-            <ul className="space-y-1 text-sm text-muted-foreground">
+            <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4" aria-hidden="true" />
+                <CalendarDays className="size-4" aria-hidden="true" />
                 Minimum stay: {listing.minStayNights} night{listing.minStayNights !== 1 && "s"}
               </li>
               <li className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4" aria-hidden="true" />
+                <CalendarDays className="size-4" aria-hidden="true" />
                 Maximum stay: {listing.maxStayNights} night{listing.maxStayNights !== 1 && "s"}
               </li>
             </ul>
@@ -273,19 +273,20 @@ export default function StayDetailPage() {
       </div>
 
       {/* Mobile fixed bar */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-white p-4 lg:hidden dark:bg-gray-950">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background p-4 lg:hidden">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div>
             <span className="text-lg font-bold">{formatPrice(listing.nightlyPriceCents)}</span>
             <span className="text-sm text-muted-foreground"> / night</span>
           </div>
-          <Link
-            href={bookHref}
-            className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-            aria-label="Request to book this stay"
-          >
-            Request to Book
-          </Link>
+          <Button asChild>
+            <Link
+              href={bookHref}
+              aria-label="Request to book this stay"
+            >
+              Request to Book
+            </Link>
+          </Button>
         </div>
       </div>
     </main>
@@ -334,7 +335,7 @@ function BookingCard({
 }) {
   return (
     <Card className="shadow-lg">
-      <CardContent className="space-y-5 p-6">
+      <CardContent className="flex flex-col gap-5 p-6">
         <div>
           <span className="text-2xl font-bold">{formatPrice(listing.nightlyPriceCents)}</span>
           <span className="text-muted-foreground"> / night</span>
@@ -352,7 +353,7 @@ function BookingCard({
         </div>
 
         {nights > 0 && (
-          <div className="space-y-1 text-sm">
+          <div className="flex flex-col gap-1 text-sm">
             <div className="flex justify-between">
               <span>{nights} night{nights !== 1 && "s"} &times; {formatPrice(listing.nightlyPriceCents)}/night</span>
               <span>{formatPrice(total)}</span>
@@ -366,15 +367,13 @@ function BookingCard({
         )}
 
         {nights > 0 ? (
-          <Link
-            href={bookHref}
-            className="inline-flex w-full items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-            aria-label="Request to book this stay"
-          >
-            Request to Book
-          </Link>
+          <Button asChild className="w-full">
+            <Link href={bookHref} aria-label="Request to book this stay">
+              Request to Book
+            </Link>
+          </Button>
         ) : (
-          <Button className="w-full bg-emerald-600 hover:bg-emerald-700" disabled>
+          <Button className="w-full" disabled>
             Select dates to book
           </Button>
         )}

@@ -36,7 +36,7 @@ export function ListingCard({ listing, checkIn, checkOut }: ListingCardProps) {
         />
       </div>
 
-      <div className="space-y-2 p-4">
+      <div className="flex flex-col gap-2 p-4">
         <h3 className="font-semibold leading-snug text-foreground line-clamp-1">
           {listing.title}
         </h3>
@@ -56,7 +56,7 @@ export function ListingCard({ listing, checkIn, checkOut }: ListingCardProps) {
             <StoragePrice listing={listing} />
           )}
           {listing.verified && (
-            <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+            <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary">
               <CheckCircle className="size-3" />
               Verified
             </Badge>

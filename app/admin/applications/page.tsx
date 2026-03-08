@@ -104,7 +104,7 @@ export default function AdminApplicationsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+    <main className="mx-auto max-w-5xl flex flex-col gap-6 px-4 py-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Beta Applications</h1>
@@ -137,7 +137,7 @@ export default function AdminApplicationsPage() {
         ))}
       </nav>
 
-      <div className="space-y-3">
+      <div className="flex flex-col gap-3">
         {filtered.length === 0 && (
           <p className="py-12 text-center text-muted-foreground">
             No applications match this filter.
@@ -170,13 +170,13 @@ function ApplicationRow({
   return (
     <Card className="gap-0 py-0">
       <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start">
-        <div className="min-w-0 flex-1 space-y-2">
+        <div className="min-w-0 flex-1 flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">{application.name}</span>
             <Badge className={badge.className}>{badge.label}</Badge>
           </div>
 
-          <div className="space-y-1 text-sm text-muted-foreground">
+          <div className="flex flex-col gap-1 text-sm text-muted-foreground">
             <p>{application.email}</p>
             <p>{application.phone}</p>
             <p className="text-xs">

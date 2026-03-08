@@ -29,7 +29,7 @@ export default function BookingSuccessPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="size-8 animate-spin text-muted-foreground" />
-        <span className="ml-3 text-neutral-600">Confirming your payment…</span>
+        <span className="ml-3 text-muted-foreground">Confirming your payment…</span>
       </div>
     );
   }
@@ -47,9 +47,9 @@ export default function BookingSuccessPage() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-24 text-center">
-      <CheckCircle className="mx-auto h-16 w-16 text-emerald-500" />
+      <CheckCircle className="mx-auto size-16 text-primary" />
       <h1 className="mt-6 text-2xl font-bold">Payment Successful!</h1>
-      <p className="mt-3 text-neutral-600">
+      <p className="mt-3 text-muted-foreground">
         Your booking is confirmed. You&apos;ll receive a confirmation email shortly
         with all the details. The host will share arrival instructions before your check-in.
       </p>

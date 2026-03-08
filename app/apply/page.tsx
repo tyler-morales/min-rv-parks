@@ -52,13 +52,13 @@ export default function ApplyPage() {
   return (
     <div className="mx-auto max-w-lg px-4 py-16">
       <h1 className="text-2xl font-bold">Apply for Beta Access</h1>
-      <p className="mt-2 text-neutral-600">
+      <p className="mt-2 text-muted-foreground">
         Mini RV Parks is in private beta. Apply below and we&apos;ll be in
         touch.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-        <div className="space-y-1.5">
+      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
+        <div className="flex flex-col gap-1.5">
           <Label htmlFor="name">Name</Label>
           <Input
             id="name"
@@ -69,7 +69,7 @@ export default function ApplyPage() {
           />
         </div>
 
-        <div className="space-y-1.5">
+        <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">Email</Label>
           <Input
             id="email"
@@ -81,7 +81,7 @@ export default function ApplyPage() {
           />
         </div>
 
-        <div className="space-y-1.5">
+        <div className="flex flex-col gap-1.5">
           <Label htmlFor="phone">Phone</Label>
           <Input
             id="phone"
@@ -93,7 +93,7 @@ export default function ApplyPage() {
           />
         </div>
 
-        <div className="space-y-1.5">
+        <div className="flex flex-col gap-1.5">
           <Label htmlFor="notes">Why are you interested?</Label>
           <Textarea
             id="notes"
@@ -108,7 +108,7 @@ export default function ApplyPage() {
         {error && (
           <div
             role="alert"
-            className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+            className="rounded-lg border border-destructive bg-destructive/10 p-4 text-sm text-destructive"
           >
             {error}
           </div>
@@ -117,10 +117,10 @@ export default function ApplyPage() {
         <Button
           type="submit"
           disabled={submitting}
-          className="w-full bg-emerald-600 hover:bg-emerald-700"
+          className="w-full"
         >
           {submitting ? (
-            <Loader2 className="size-4 animate-spin" />
+            <Loader2 className="size-4 animate-spin" data-icon="inline-start" />
           ) : (
             "Submit Application"
           )}
