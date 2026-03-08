@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Shield,
@@ -10,26 +10,47 @@ import {
   ArrowRight,
   ClipboardList,
 } from "lucide-react";
-import { useAppStore } from "@/lib/store";
+import { useAuth } from "@/lib/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function AdminDashboardPage() {
-  const isAdmin = useAppStore((s) => s.isAdmin);
-  const stayListings = useAppStore((s) => s.stayListings);
-  const storageListings = useAppStore((s) => s.storageListings);
-  const betaApplications = useAppStore((s) => s.betaApplications);
+  const { isAdmin, loading: authLoading } = useAuth();
+  const [listingStats, setListingStats] = useState({ pending: 0, live: 0 });
+  const [appStats, setAppStats] = useState({ pending: 0, total: 0 });
 
-  const stats = useMemo(() => {
-    const all = [...stayListings, ...storageListings];
-    return {
-      pendingListings: all.filter((l) => l.status === "PENDING").length,
-      liveListings: all.filter((l) => l.status === "LIVE").length,
-      pendingApps: betaApplications.filter((a) => a.status === "PENDING").length,
-      totalApps: betaApplications.length,
-    };
-  }, [stayListings, storageListings, betaApplications]);
+  useEffect(() => {
+    if (!isAdmin) return;
+    fetch("/api/admin/listings")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: { status: string }[]) => {
+        const list = Array.isArray(data) ? data : [];
+        setListingStats({
+          pending: list.filter((l) => l.status === "PENDING").length,
+          live: list.filter((l) => l.status === "LIVE").length,
+        });
+      })
+      .catch(() => {});
 
-  if (!isAdmin) {
+    fetch("/api/admin/beta_applications")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: { status: string }[]) => {
+        const list = Array.isArray(data) ? data : [];
+        setAppStats({
+          pending: list.filter((a) => a.status === "PENDING").length,
+          total: list.length,
+        });
+      })
+      .catch(() => {});
+  }, [isAdmin]);
+
+  const stats = {
+    pendingListings: listingStats.pending,
+    liveListings: listingStats.live,
+    pendingApps: appStats.pending,
+    totalApps: appStats.total,
+  };
+
+  if (!authLoading && !isAdmin) {
     return (
       <main className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4">
         <Shield className="size-12 text-muted-foreground" />

@@ -1,27 +1,112 @@
 "use client";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle, CreditCard } from "lucide-react";
+import { AlertTriangle, Clock, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useAppStore } from "@/lib/store";
-import { formatPrice } from "@/lib/mock-data";
+import { formatPrice } from "@/lib/utils";
+
+function useCountdown(expiresAt: string | null) {
+  const [remaining, setRemaining] = useState("");
+  const [expired, setExpired] = useState(false);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const tick = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      if (diff <= 0) {
+        setExpired(true);
+        setRemaining("Expired");
+        return;
+      }
+      const h = Math.floor(diff / 3_600_000);
+      const m = Math.floor((diff % 3_600_000) / 60_000);
+      const s = Math.floor((diff % 60_000) / 1000);
+      setRemaining(`${h}h ${m}m ${s}s`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+
+  return { remaining, expired };
+}
+
+interface RequestData {
+  id: string;
+  listing_id: string;
+  guest_name: string;
+  move_in_date: string;
+  months: number;
+  deposit_cents: number;
+  monthly_price_cents: number;
+  status: string;
+  expires_at: string | null;
+  listings?: { title: string };
+}
 
 export default function StorageConfirmPage() {
-  const params = useParams<{ id: string }>();
-  const [paid, setPaid] = useState(false);
+  const searchParams = useSearchParams();
+  const requestId = searchParams.get("requestId");
 
-  const listing = useAppStore((s) =>
-    s.storageListings.find((l) => l.id === params.id)
-  );
+  const [req, setReq] = useState<RequestData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [paying, setPaying] = useState(false);
+  const [error, setError] = useState("");
 
-  if (!listing) {
+  useEffect(() => {
+    if (!requestId) {
+      setLoading(false);
+      return;
+    }
+    fetch(`/api/storage-requests/${requestId}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setReq(data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [requestId]);
+
+  const { remaining, expired } = useCountdown(req?.expires_at ?? null);
+
+  const handlePay = useCallback(async () => {
+    if (!requestId) return;
+    setPaying(true);
+    setError("");
+    try {
+      const res = await fetch("/api/payments/storage-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to create checkout session");
+        setPaying(false);
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setPaying(false);
+    }
+  }, [requestId]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!requestId || !req) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-24 text-center">
-        <h1 className="text-2xl font-bold">Listing not found</h1>
+        <h1 className="text-2xl font-bold">Request not found</h1>
+        <p className="mt-2 text-neutral-600">This payment link may be invalid or expired.</p>
         <Button render={<Link href="/" />} nativeButton={false} className="mt-4" variant="outline">
           Back to Home
         </Button>
@@ -29,41 +114,60 @@ export default function StorageConfirmPage() {
     );
   }
 
-  const totalCents = listing.depositCents + listing.monthlyPriceCents;
-
-  if (paid) {
+  if (req.status !== "ACCEPTED") {
     return (
-      <div className="mx-auto max-w-lg px-4 py-24 text-center">
-        <CheckCircle className="mx-auto h-16 w-16 text-emerald-500" />
-        <h1 className="mt-6 text-2xl font-bold">Payment Successful!</h1>
-        <p className="mt-3 text-neutral-600">
-          Your storage contract is confirmed. The host has been notified and
-          will send move-in instructions.
+      <div className="mx-auto max-w-2xl px-4 py-24 text-center">
+        <AlertTriangle className="mx-auto h-12 w-12 text-amber-500" />
+        <h1 className="mt-4 text-2xl font-bold">
+          {req.status === "EXPIRED" ? "Request Expired" : "Payment Not Available"}
+        </h1>
+        <p className="mt-2 text-neutral-600">
+          {req.status === "EXPIRED"
+            ? "The 24-hour payment window has passed. Please submit a new request."
+            : `This request has status: ${req.status}.`}
         </p>
-        <Button render={<Link href="/" />} nativeButton={false} className="mt-8">
+        <Button render={<Link href="/" />} nativeButton={false} className="mt-4" variant="outline">
           Back to Home
         </Button>
       </div>
     );
   }
 
+  const totalCents = req.deposit_cents + req.monthly_price_cents;
+  const title = req.listings?.title ?? "RV Storage";
+
   return (
     <div className="mx-auto max-w-lg px-4 py-16">
       <h1 className="text-2xl font-bold">Complete Your Payment</h1>
 
-      <Card className="mt-8 p-6 space-y-4">
-        <h2 className="font-semibold">{listing.title}</h2>
+      {!expired && remaining && (
+        <div className="mt-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <Clock className="h-4 w-4 shrink-0" />
+          <span>
+            Payment window closes in <strong>{remaining}</strong>
+          </span>
+        </div>
+      )}
+
+      {expired && (
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          This request has expired. Please submit a new storage request.
+        </div>
+      )}
+
+      <Card className="mt-6 p-6 space-y-4">
+        <h2 className="font-semibold">{title}</h2>
 
         <Separator />
 
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span>Security deposit</span>
-            <span>{formatPrice(listing.depositCents)}</span>
+            <span>{formatPrice(req.deposit_cents)}</span>
           </div>
           <div className="flex justify-between">
             <span>First month&apos;s rent</span>
-            <span>{formatPrice(listing.monthlyPriceCents)}</span>
+            <span>{formatPrice(req.monthly_price_cents)}</span>
           </div>
           <Separator />
           <div className="flex justify-between font-semibold text-base">
@@ -74,17 +178,22 @@ export default function StorageConfirmPage() {
 
         <Separator />
 
+        {error && (
+          <p className="text-sm text-red-600">{error}</p>
+        )}
+
         <Button
           className="w-full bg-indigo-600 hover:bg-indigo-700 gap-2"
-          onClick={() => setPaid(true)}
+          onClick={handlePay}
+          disabled={paying || expired}
         >
-          <CreditCard className="h-4 w-4" />
-          Pay {formatPrice(totalCents)} with Stripe
+          {paying ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <CreditCard className="h-4 w-4" />
+          )}
+          {paying ? "Redirecting to Stripe…" : `Pay ${formatPrice(totalCents)}`}
         </Button>
-
-        <p className="text-center text-xs text-neutral-500">
-          This is a demo. No real payment is processed.
-        </p>
       </Card>
     </div>
   );

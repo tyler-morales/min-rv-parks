@@ -28,6 +28,7 @@ import {
   CheckCircle2,
   PartyPopper,
 } from "lucide-react";
+import { GeocoderInput } from "@/components/geocoder-input";
 import type {
   ListingType,
   ElectricType,
@@ -51,6 +52,8 @@ interface WizardState {
   title: string;
   description: string;
   nearTown: string;
+  lat: number | null;
+  lng: number | null;
   maxRigLength: number;
   slideOutsAllowed: boolean;
   pullThrough: boolean;
@@ -79,6 +82,8 @@ const INITIAL_STATE: WizardState = {
   title: "",
   description: "",
   nearTown: "",
+  lat: null,
+  lng: null,
   maxRigLength: 40,
   slideOutsAllowed: false,
   pullThrough: false,
@@ -126,7 +131,9 @@ export default function NewListingPage() {
     if (step === 2) {
       if (!data.title.trim()) errs.push("Title is required.");
       if (!data.description.trim()) errs.push("Description is required.");
-      if (!data.nearTown.trim()) errs.push("Location is required.");
+      if (!data.nearTown.trim()) errs.push("Pick a location (search and select a place).");
+      if (data.lat == null || data.lng == null)
+        errs.push("Select a location from the suggestions so guests can find your listing.");
     }
     if (step === 3 && data.maxRigLength < 10)
       errs.push("Max rig length must be at least 10 ft.");
@@ -165,6 +172,8 @@ export default function NewListingPage() {
         title: data.title,
         description: data.description,
         nearTown: data.nearTown,
+        lat: data.lat,
+        lng: data.lng,
         maxRigLength: data.maxRigLength,
         slideOutsAllowed: data.slideOutsAllowed,
         pullThrough: data.pullThrough,
@@ -424,12 +433,21 @@ function StepBasics({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="nearTown">Near Town</Label>
-        <Input
-          id="nearTown"
-          placeholder="e.g. Fredericksburg, TX"
+        <Label htmlFor="nearTown">Location (required for search)</Label>
+        <p className="text-xs text-muted-foreground mb-1">
+          Search for a city or area near your listing. Guests search by location, so pick a place so they can find you.
+        </p>
+        <GeocoderInput
           value={data.nearTown}
-          onChange={(e) => update({ nearTown: e.target.value })}
+          onChange={(text) => update({ nearTown: text })}
+          onSelect={(result) =>
+            update({
+              nearTown: result.label,
+              lat: result.lat,
+              lng: result.lng,
+            })
+          }
+          placeholder="e.g. Chicago, IL or Fredericksburg, TX"
         />
       </div>
     </div>
