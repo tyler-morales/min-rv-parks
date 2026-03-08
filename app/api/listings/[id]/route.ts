@@ -36,7 +36,7 @@ export async function GET(
   };
 
   const listing = dbListingToFrontend(
-    row as Parameters<typeof dbListingToFrontend>[0],
+    row as unknown as Parameters<typeof dbListingToFrontend>[0],
     host,
   );
 
