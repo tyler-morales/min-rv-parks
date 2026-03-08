@@ -8,8 +8,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 2. Create a [Supabase](https://supabase.com) project (e.g. `mini-rv-parks`).
 3. In **Settings → API**, copy Project URL, `anon` key, and `service_role` key into `.env.local` as `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
 4. In **Settings → Auth**, enable Email provider. For dev you can disable "Confirm email".
-5. Run the initial migration: Supabase Dashboard → SQL Editor → paste and run `supabase/migrations/001_initial_schema.sql`, or use the Supabase CLI (see below).
-6. Create the **listing-photos** storage bucket: Storage → New bucket → name `listing-photos`, set **Public bucket** so listing images are publicly readable. No extra policies required if uploads go through the API (server uses service role); for client uploads, add a policy allowing authenticated users to upload to `{listing_id}/*`.
+5. Run migrations in order (e.g. `supabase db push` or paste each file in SQL Editor): `001_initial_schema.sql` through `006_storage_listing_photos.sql`. Migration 006 creates the **listing-photos** bucket and RLS policies (public read; authenticated upload; delete only for own listing folders).
 
 ## Supabase CLI (migrations)
 
@@ -44,6 +43,11 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Security and runbook
+
+- **[docs/SECURITY.md](docs/SECURITY.md)** — What we validate (uploads, input), how we protect (auth, cron, storage, headers, rate limiting), and which env vars are secret vs public.
+- **[docs/RUNBOOK.md](docs/RUNBOOK.md)** — Env vars, cron setup (URL + header), storage bucket and RLS, and optional rate limiting (Upstash).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
@@ -74,7 +78,7 @@ To get a **live front end** for demos without sending emails or processing payme
    | `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox for search/map |
 
 3. **Do not set** `RESEND_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, or `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`. The app will run with emails skipped (no notifications) and payments disabled (Pay button returns a “not configured” message).
-4. Optionally set `NEXT_PUBLIC_APP_URL` to your Vercel URL (e.g. `https://your-app.vercel.app`) so in-app links use the live URL.
+4. Optionally set `NEXT_PUBLIC_APP_URL` to your live Vercel URL (e.g. `https://min-rv-parks-gvdhnrr0j-tyler-morales-projects.vercel.app` or your custom domain) so in-app links, payment redirects, and Open Graph/Twitter preview URLs use the correct base.
 
 **Production env (Resend):** When you enable email in prod, either omit `RESEND_FROM` so the code uses `noreply@minirvparks.com` (after you verify the domain in Resend), or set `RESEND_FROM=Mini RV Parks <noreply@minirvparks.com>` explicitly. Do not use the sandbox address in production.
 

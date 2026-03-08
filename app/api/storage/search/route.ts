@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rpcRowToStorage } from "@/lib/api/search";
+import { genericServerError } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return genericServerError("storage/search", error.message);
   }
 
   const listings = (data ?? []).map(rpcRowToStorage);

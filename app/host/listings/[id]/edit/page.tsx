@@ -197,7 +197,7 @@ export default function HostListingEditPage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl space-y-6 px-4 py-8">
+    <main className="mx-auto max-w-2xl flex flex-col gap-6 px-4 py-8">
       <Link
         href={id ? `/host/listings/${id}` : "/host/dashboard"}
         className="inline-flex items-center gap-1 text-sm text-emerald-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

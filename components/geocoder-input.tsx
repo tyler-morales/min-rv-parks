@@ -109,7 +109,7 @@ export function GeocoderInput({
         onKeyDown={handleKeyDown}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
         role="combobox"
         aria-expanded={open}
         aria-autocomplete="list"
@@ -120,7 +120,7 @@ export function GeocoderInput({
         <ul
           id="geocoder-listbox"
           role="listbox"
-          className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg"
+          className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-lg border border-border bg-background shadow-lg"
         >
           {suggestions.map((feature, i) => (
             <li
@@ -128,12 +128,12 @@ export function GeocoderInput({
               id={`geo-option-${i}`}
               role="option"
               aria-selected={i === activeIdx}
-              className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-sm text-gray-700 ${
-                i === activeIdx ? "bg-emerald-50 text-emerald-800" : "hover:bg-gray-50"
+              className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-sm text-foreground ${
+                i === activeIdx ? "bg-primary/10 text-primary" : "hover:bg-muted"
               }`}
               onMouseDown={() => handleSelect(feature)}
             >
-              <MapPin className="size-4 shrink-0 text-gray-400" />
+              <MapPin className="size-4 shrink-0 text-muted-foreground" />
               <span className="truncate">{feature.place_name}</span>
             </li>
           ))}

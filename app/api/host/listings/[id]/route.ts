@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { dbListingToFrontend, frontendToDbListing } from "@/lib/api/listings";
+import { genericServerError } from "@/lib/api-error";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -23,10 +24,11 @@ export async function GET(
     .single();
 
   if (error || !row) {
-    return NextResponse.json(
-      { error: error?.message ?? "Not found" },
-      { status: error?.code === "PGRST116" ? 404 : 500 }
-    );
+    if (error?.code === "PGRST116") {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    if (error) return genericServerError("host/listings/[id] GET", error.message);
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   const { data: profile } = await supabase
@@ -112,7 +114,7 @@ export async function PATCH(
     .eq("host_id", user.id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return genericServerError("host/listings/[id] DELETE", error.message);
   }
 
   return NextResponse.json({ ok: true });
@@ -138,7 +140,7 @@ export async function DELETE(
     .eq("host_id", user.id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return genericServerError("host/listings/[id] DELETE", error.message);
   }
 
   return NextResponse.json({ ok: true });

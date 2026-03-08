@@ -110,7 +110,7 @@ export default function HostListingDetailPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+    <main className="mx-auto max-w-5xl flex flex-col gap-6 px-4 py-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <Link
           href="/host/dashboard"
@@ -187,7 +187,7 @@ export default function HostListingDetailPage() {
           <CardTitle>{listing.title}</CardTitle>
           <p className="text-sm text-muted-foreground">{listing.nearTown}</p>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="flex flex-col gap-4">
           <p className="text-sm">{listing.description}</p>
           <Separator />
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">

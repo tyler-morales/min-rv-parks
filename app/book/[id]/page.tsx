@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/utils";
 import type { StayListing } from "@/lib/types";
@@ -113,9 +113,9 @@ export default function RequestToBookPage() {
   if (submitted) {
     return (
       <div className="mx-auto max-w-lg px-4 py-24 text-center">
-        <CheckCircle className="mx-auto h-16 w-16 text-emerald-500" />
+        <CheckCircle className="mx-auto size-16 text-primary" />
         <h1 className="mt-6 text-2xl font-bold">Your request has been sent!</h1>
-        <p className="mt-3 text-neutral-600">
+        <p className="mt-3 text-muted-foreground">
           The host will review your request and respond within 24 hours. If
           accepted, you&apos;ll have 24 hours to complete payment.
         </p>
@@ -138,7 +138,7 @@ export default function RequestToBookPage() {
         className="mb-6 gap-1.5"
         onClick={() => router.back()}
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft className="size-4" data-icon="inline-start" />
         Back
       </Button>
 
@@ -146,8 +146,8 @@ export default function RequestToBookPage() {
         <div>
           <h1 className="text-2xl font-bold">Request to Book</h1>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-            <div className="space-y-1.5">
+          <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="name">Name</Label>
               <Input
                 id="name"
@@ -158,7 +158,7 @@ export default function RequestToBookPage() {
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -170,7 +170,7 @@ export default function RequestToBookPage() {
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
@@ -182,7 +182,7 @@ export default function RequestToBookPage() {
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="message">Message to host (optional)</Label>
               <Textarea
                 id="message"
@@ -196,7 +196,7 @@ export default function RequestToBookPage() {
             {error && (
               <div
                 role="alert"
-                className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+                className="rounded-lg border border-destructive bg-destructive/10 p-4 text-sm text-destructive"
               >
                 {error}
               </div>
@@ -205,10 +205,10 @@ export default function RequestToBookPage() {
             <Button
               type="submit"
               disabled={submitting}
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
+              className="w-full"
             >
               {submitting ? (
-                <Loader2 className="size-4 animate-spin" />
+                <Loader2 className="size-4 animate-spin" data-icon="inline-start" />
               ) : (
                 "Send Request"
               )}
@@ -231,29 +231,30 @@ export default function RequestToBookPage() {
               </div>
             )}
 
-            <div className="p-5 space-y-4">
-              <h2 className="font-semibold leading-snug">{listing.title}</h2>
-
+            <CardHeader className="p-5 pb-0">
+              <CardTitle className="text-base font-semibold leading-snug">{listing.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4 p-5 pt-4">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="text-neutral-500">Check-in</p>
+                  <p className="text-muted-foreground">Check-in</p>
                   <p className="font-medium">{checkIn || "—"}</p>
                 </div>
                 <div>
-                  <p className="text-neutral-500">Check-out</p>
+                  <p className="text-muted-foreground">Check-out</p>
                   <p className="font-medium">{checkOut || "—"}</p>
                 </div>
               </div>
 
               {nights > 0 && (
-                <p className="text-sm text-neutral-600">
+                <p className="text-sm text-muted-foreground">
                   {nights} night{nights !== 1 ? "s" : ""}
                 </p>
               )}
 
               <Separator />
 
-              <div className="space-y-2 text-sm">
+              <div className="flex flex-col gap-2 text-sm">
                 <div className="flex justify-between">
                   <span>
                     {nights} night{nights !== 1 ? "s" : ""} &times;{" "}
@@ -282,10 +283,10 @@ export default function RequestToBookPage() {
                 )}
                 <div className="text-sm">
                   <p className="font-medium">{listing.host.name}</p>
-                  <p className="text-neutral-500">Host</p>
+                  <p className="text-muted-foreground">Host</p>
                 </div>
               </div>
-            </div>
+            </CardContent>
           </Card>
         </div>
       </div>

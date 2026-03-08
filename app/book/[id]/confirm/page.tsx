@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AlertTriangle, Clock, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/utils";
 
@@ -110,7 +110,7 @@ export default function BookingConfirmPage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-24 text-center">
         <h1 className="text-2xl font-bold">Request not found</h1>
-        <p className="mt-2 text-neutral-600">This payment link may be invalid or expired.</p>
+        <p className="mt-2 text-muted-foreground">This payment link may be invalid or expired.</p>
         <Button render={<Link href="/" />} nativeButton={false} className="mt-4" variant="outline">
           Back to Home
         </Button>
@@ -121,11 +121,11 @@ export default function BookingConfirmPage() {
   if (req.status !== "ACCEPTED") {
     return (
       <div className="mx-auto max-w-2xl px-4 py-24 text-center">
-        <AlertTriangle className="mx-auto h-12 w-12 text-amber-500" />
+        <AlertTriangle className="mx-auto size-12 text-amber-500" aria-hidden />
         <h1 className="mt-4 text-2xl font-bold">
           {req.status === "EXPIRED" ? "Request Expired" : "Payment Not Available"}
         </h1>
-        <p className="mt-2 text-neutral-600">
+        <p className="mt-2 text-muted-foreground">
           {req.status === "EXPIRED"
             ? "The 24-hour payment window has passed. Please submit a new request."
             : `This request has status: ${req.status}.`}
@@ -146,8 +146,8 @@ export default function BookingConfirmPage() {
       <h1 className="text-2xl font-bold">Complete Your Payment</h1>
 
       {!expired && remaining && (
-        <div className="mt-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <Clock className="h-4 w-4 shrink-0" />
+        <div className="mt-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          <Clock className="size-4 shrink-0" data-icon="inline-start" aria-hidden />
           <span>
             Payment window closes in <strong>{remaining}</strong>
           </span>
@@ -155,52 +155,54 @@ export default function BookingConfirmPage() {
       )}
 
       {expired && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div className="mt-4 rounded-lg border border-destructive bg-destructive/10 px-4 py-3 text-sm text-destructive">
           This request has expired. Please submit a new booking request.
         </div>
       )}
 
-      <Card className="mt-6 p-6 space-y-4">
-        <h2 className="font-semibold">{title}</h2>
-
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p className="text-neutral-500">Check-in</p>
-            <p className="font-medium">{req.check_in}</p>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="text-base">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-muted-foreground">Check-in</p>
+              <p className="font-medium">{req.check_in}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Check-out</p>
+              <p className="font-medium">{req.check_out}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-neutral-500">Check-out</p>
-            <p className="font-medium">{req.check_out}</p>
+
+          <Separator />
+
+          <div className="flex justify-between text-sm">
+            <span>
+              {nights} night{nights !== 1 ? "s" : ""} &times; {formatPrice(nightlyRate)}/night
+            </span>
+            <span className="font-semibold">{formatPrice(req.total_price_cents)}</span>
           </div>
-        </div>
 
-        <Separator />
-
-        <div className="flex justify-between text-sm">
-          <span>
-            {nights} night{nights !== 1 ? "s" : ""} &times; {formatPrice(nightlyRate)}/night
-          </span>
-          <span className="font-semibold">{formatPrice(req.total_price_cents)}</span>
-        </div>
-
-        <Separator />
-
-        {error && (
-          <p className="text-sm text-red-600">{error}</p>
-        )}
-
-        <Button
-          className="w-full bg-indigo-600 hover:bg-indigo-700 gap-2"
-          onClick={handlePay}
-          disabled={paying || expired}
-        >
-          {paying ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <CreditCard className="h-4 w-4" />
+          {error && (
+            <p className="text-sm text-destructive">{error}</p>
           )}
-          {paying ? "Redirecting to Stripe…" : `Pay ${formatPrice(req.total_price_cents)}`}
-        </Button>
+        </CardContent>
+        <CardFooter>
+          <Button
+            className="w-full gap-2"
+            onClick={handlePay}
+            disabled={paying || expired}
+          >
+            {paying ? (
+              <Loader2 className="size-4 animate-spin" data-icon="inline-start" />
+            ) : (
+              <CreditCard className="size-4" data-icon="inline-start" />
+            )}
+            {paying ? "Redirecting to Stripe…" : `Pay ${formatPrice(req.total_price_cents)}`}
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   );

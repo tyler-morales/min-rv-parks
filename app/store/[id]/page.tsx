@@ -112,9 +112,9 @@ export default function RequestToStorePage() {
   if (submitted) {
     return (
       <div className="mx-auto max-w-lg px-4 py-24 text-center">
-        <CheckCircle className="mx-auto h-16 w-16 text-emerald-500" />
+        <CheckCircle className="mx-auto size-16 text-primary" />
         <h1 className="mt-6 text-2xl font-bold">Your request has been sent!</h1>
-        <p className="mt-3 text-neutral-600">
+        <p className="mt-3 text-muted-foreground">
           The host will review your storage request and respond within 24 hours.
           If accepted, you&apos;ll have 24 hours to complete your first payment.
         </p>
@@ -137,7 +137,7 @@ export default function RequestToStorePage() {
         className="mb-6 gap-1.5"
         onClick={() => router.back()}
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft className="size-4" data-icon="inline-start" />
         Back
       </Button>
 
@@ -145,8 +145,8 @@ export default function RequestToStorePage() {
         <div>
           <h1 className="text-2xl font-bold">Request to Store</h1>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-            <div className="space-y-1.5">
+          <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="name">Name</Label>
               <Input
                 id="name"
@@ -157,7 +157,7 @@ export default function RequestToStorePage() {
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -169,7 +169,7 @@ export default function RequestToStorePage() {
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
@@ -181,7 +181,7 @@ export default function RequestToStorePage() {
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="months">Months requested</Label>
               <Input
                 id="months"
@@ -192,13 +192,13 @@ export default function RequestToStorePage() {
                 onChange={(e) => setMonths(Number(e.target.value))}
               />
               {listing.minimumMonths > 1 && (
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   Minimum {listing.minimumMonths} months
                 </p>
               )}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="message">Message to host (optional)</Label>
               <Textarea
                 id="message"
@@ -212,7 +212,7 @@ export default function RequestToStorePage() {
             {error && (
               <div
                 role="alert"
-                className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+                className="rounded-lg border border-destructive bg-destructive/10 p-4 text-sm text-destructive"
               >
                 {error}
               </div>
@@ -221,10 +221,10 @@ export default function RequestToStorePage() {
             <Button
               type="submit"
               disabled={submitting}
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
+              className="w-full"
             >
               {submitting ? (
-                <Loader2 className="size-4 animate-spin" />
+                <Loader2 className="size-4 animate-spin" data-icon="inline-start" />
               ) : (
                 "Send Request"
               )}
@@ -247,7 +247,7 @@ export default function RequestToStorePage() {
               </div>
             )}
 
-            <div className="p-5 space-y-4">
+            <div className="flex flex-col gap-4 p-5">
               <div className="flex items-start justify-between gap-2">
                 <h2 className="font-semibold leading-snug">{listing.title}</h2>
                 <Badge variant="secondary" className="shrink-0 capitalize">
@@ -256,13 +256,13 @@ export default function RequestToStorePage() {
               </div>
 
               <div className="text-sm">
-                <p className="text-neutral-500">Move-in date</p>
+                <p className="text-muted-foreground">Move-in date</p>
                 <p className="font-medium">{moveIn || "—"}</p>
               </div>
 
               <Separator />
 
-              <div className="space-y-2 text-sm">
+              <div className="flex flex-col gap-2 text-sm">
                 <div className="flex justify-between">
                   <span>Monthly rate</span>
                   <span>{formatPrice(monthlyCents)}/mo</span>
@@ -276,7 +276,7 @@ export default function RequestToStorePage() {
                   <span>First payment</span>
                   <span>{formatPrice(firstPaymentCents)}</span>
                 </div>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   Deposit + first month&apos;s rent
                 </p>
               </div>
@@ -296,7 +296,7 @@ export default function RequestToStorePage() {
                 )}
                 <div className="text-sm">
                   <p className="font-medium">{listing.host.name}</p>
-                  <p className="text-neutral-500">Host</p>
+                  <p className="text-muted-foreground">Host</p>
                 </div>
               </div>
             </div>

@@ -96,7 +96,7 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <main className="mx-auto max-w-5xl space-y-8 px-4 py-8">
+    <main className="mx-auto max-w-5xl flex flex-col gap-8 px-4 py-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
         <p className="text-sm text-muted-foreground">

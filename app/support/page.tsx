@@ -37,18 +37,18 @@ const FAQ = [
 
 export default function SupportPage() {
   return (
-    <div className="min-h-screen bg-white">
-      <section className="border-b border-gray-100 bg-gradient-to-b from-emerald-50/60 to-white px-4 py-16 sm:py-24">
+    <div className="min-h-screen bg-background">
+      <section className="border-b border-border bg-gradient-to-b from-primary/5 to-background px-4 py-16 sm:py-24">
         <div className="mx-auto max-w-3xl text-center">
           <HelpCircle
-            className="mx-auto size-12 text-emerald-600"
+            className="mx-auto size-12 text-primary"
             aria-hidden
             strokeWidth={1.5}
           />
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+          <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Support
           </h1>
-          <p className="mt-4 text-lg text-gray-600">
+          <p className="mt-4 text-lg text-muted-foreground">
             FAQ and contact. We’re a small team in beta — we read every
             message.
           </p>
@@ -57,17 +57,17 @@ export default function SupportPage() {
 
       <section className="px-4 py-16 sm:py-20" aria-labelledby="faq-heading">
         <div className="mx-auto max-w-3xl">
-          <h2 id="faq-heading" className="text-2xl font-bold text-gray-900">
+          <h2 id="faq-heading" className="text-2xl font-bold text-foreground">
             Frequently asked questions
           </h2>
-          <dl className="mt-10 space-y-6">
+          <dl className="mt-10 flex flex-col gap-6">
             {FAQ.map(({ q, a }) => (
               <div
                 key={q}
-                className="rounded-xl border border-gray-100 bg-gray-50/50 p-5"
+                className="rounded-xl border border-border bg-muted/50 p-5"
               >
-                <dt className="font-semibold text-gray-900">{q}</dt>
-                <dd className="mt-2 text-sm leading-relaxed text-gray-600">
+                <dt className="font-semibold text-foreground">{q}</dt>
+                <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   {a}
                 </dd>
               </div>
@@ -91,10 +91,7 @@ export default function SupportPage() {
             as soon as we can.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Button
-              asChild
-              className="bg-emerald-600 hover:bg-emerald-700 focus-visible:ring-emerald-500"
-            >
+            <Button asChild>
               <a href="mailto:support@minirvparks.com">
                 support@minirvparks.com
               </a>
@@ -103,18 +100,18 @@ export default function SupportPage() {
               <Link href="/">Back to home</Link>
             </Button>
           </div>
-          <p className="mt-8 text-xs text-gray-500">
+          <p className="mt-8 text-xs text-muted-foreground">
             You can also read our{" "}
             <Link
               href="/about"
-              className="font-medium text-emerald-700 underline hover:text-emerald-800 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              className="font-medium text-primary underline hover:text-primary/80 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               About
             </Link>{" "}
             and{" "}
             <Link
               href="/beta"
-              className="font-medium text-emerald-700 underline hover:text-emerald-800 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              className="font-medium text-primary underline hover:text-primary/80 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Join Beta
             </Link>{" "}

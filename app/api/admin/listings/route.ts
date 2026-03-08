@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { dbListingToFrontend } from "@/lib/api/listings";
+import { genericServerError } from "@/lib/api-error";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -38,7 +39,7 @@ export async function GET(request: Request) {
   const { data: rows, error } = await query;
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return genericServerError("admin/listings", error.message);
   }
 
   const hostIds = [...new Set((rows ?? []).map((r: { host_id: string }) => r.host_id))];

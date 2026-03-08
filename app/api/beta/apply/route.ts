@@ -1,34 +1,34 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendBetaApplied } from "@/lib/email";
+import { genericServerError } from "@/lib/api-error";
+import { betaApplySchema, parseAndValidate } from "@/lib/validations/api";
 import { NextResponse } from "next/server";
 
+const MAX_BODY_BYTES = 64 * 1024;
+
 export async function POST(request: Request) {
-  let body: Record<string, unknown>;
+  const contentLength = request.headers.get("content-length");
+  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
+    return NextResponse.json({ error: "Request too large" }, { status: 400 });
+  }
+  let body: unknown;
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { name, email, phone, notes } = body as {
-    name?: string;
-    email?: string;
-    phone?: string;
-    notes?: string;
-  };
-
-  if (!name || !email || !phone) {
-    return NextResponse.json(
-      { error: "name, email, and phone are required" },
-      { status: 400 },
-    );
+  const parsed = parseAndValidate(body, betaApplySchema);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.errorMessage }, { status: 400 });
   }
+  const { name, email, phone, notes } = parsed.data;
 
   const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("beta_applications")
-    .insert({ name, email: email.toLowerCase().trim(), phone, notes: notes ?? "" })
+    .insert({ name, email, phone, notes: notes ?? "" })
     .select("id, status, created_at")
     .single();
 
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
         { status: 409 },
       );
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return genericServerError("beta/apply", error.message);
   }
 
   const adminEmail = process.env.ADMIN_EMAIL;

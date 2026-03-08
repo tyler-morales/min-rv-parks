@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { genericServerError } from "@/lib/api-error";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -37,7 +38,7 @@ export async function GET(request: Request) {
   const { data: rows, error } = await query;
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return genericServerError("admin/beta_applications", error.message);
   }
 
   return NextResponse.json(rows ?? []);

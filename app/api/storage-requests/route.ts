@@ -1,33 +1,36 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendStorageRequestToHost, sendStorageRequestToGuest } from "@/lib/email";
+import { genericServerError } from "@/lib/api-error";
+import { parseAndValidate, storageRequestSchema } from "@/lib/validations/api";
 import { NextResponse } from "next/server";
 
+const MAX_BODY_BYTES = 64 * 1024;
+
 export async function POST(request: Request) {
-  let body: Record<string, unknown>;
+  const contentLength = request.headers.get("content-length");
+  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
+    return NextResponse.json({ error: "Request too large" }, { status: 400 });
+  }
+  let body: unknown;
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const {
-    listingId, guestName, guestEmail, guestPhone, message, moveInDate, months,
-  } = body as {
-    listingId?: string;
-    guestName?: string;
-    guestEmail?: string;
-    guestPhone?: string;
-    message?: string;
-    moveInDate?: string;
-    months?: number;
-  };
-
-  if (!listingId || !guestName || !guestEmail || !guestPhone || !moveInDate) {
-    return NextResponse.json(
-      { error: "listingId, guestName, guestEmail, guestPhone, moveInDate are required" },
-      { status: 400 },
-    );
+  const parsed = parseAndValidate(body, storageRequestSchema);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.errorMessage }, { status: 400 });
   }
+  const {
+    listingId,
+    guestName,
+    guestEmail,
+    guestPhone,
+    message,
+    moveInDate,
+    months,
+  } = parsed.data;
 
   const supabase = createAdminClient();
 
@@ -35,7 +38,7 @@ export async function POST(request: Request) {
   const { data: approval } = await supabase
     .from("beta_applications")
     .select("status")
-    .eq("email", (guestEmail as string).toLowerCase().trim())
+    .eq("email", guestEmail)
     .eq("status", "APPROVED")
     .maybeSingle();
 
@@ -89,7 +92,7 @@ export async function POST(request: Request) {
     .single();
 
   if (insertErr) {
-    return NextResponse.json({ error: insertErr.message }, { status: 500 });
+    return genericServerError("storage-requests", insertErr.message);
   }
 
   // Fetch host info for email
@@ -113,7 +116,7 @@ export async function POST(request: Request) {
       months: resolvedMonths,
       monthlyPriceCents,
       depositCents,
-      message: message as string | undefined,
+      message: message ?? undefined,
     }).catch(console.error);
   }
 

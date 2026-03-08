@@ -97,7 +97,7 @@ export default function Home() {
             <br />
             from Real Landowners
           </h1>
-          <p className="mx-auto mt-4 max-w-lg text-lg text-emerald-100 sm:text-xl">
+          <p className="mx-auto mt-4 max-w-lg text-lg text-primary-foreground/90 sm:text-xl">
             No big parks. No crowds. Just great spots.
           </p>
         </div>
@@ -105,12 +105,12 @@ export default function Home() {
         {/* Search bar */}
         <form
           onSubmit={handleSearch}
-          className="relative z-10 mx-auto mt-10 w-full max-w-3xl rounded-2xl bg-white p-2 shadow-xl sm:p-3"
+          className="relative z-10 mx-auto mt-10 w-full max-w-3xl rounded-2xl bg-background p-2 shadow-xl sm:p-3"
           role="search"
           aria-label="Search RV pads"
         >
           {/* Tabs */}
-          <div className="mb-3 flex gap-1 border-b border-gray-100 pb-2" role="tablist">
+          <div className="mb-3 flex gap-1 border-b border-border pb-2" role="tablist">
             {(["stays", "storage"] as const).map((tab) => (
               <button
                 key={tab}
@@ -118,10 +118,10 @@ export default function Home() {
                 role="tab"
                 aria-selected={activeTab === tab}
                 aria-controls={`panel-${tab}`}
-                className={`rounded-lg px-4 py-1.5 text-sm font-medium capitalize transition-colors focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
+                className={`rounded-lg px-4 py-1.5 text-sm font-medium capitalize transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
                   activeTab === tab
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 onClick={() => setActiveTab(tab)}
               >
@@ -134,11 +134,11 @@ export default function Home() {
           <div
             id={`panel-${activeTab}`}
             role="tabpanel"
-            className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-0 sm:divide-x sm:divide-gray-200"
+            className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-0 sm:divide-x sm:divide-border"
           >
             {/* Destination (geocoder) */}
             <div className="flex-1 px-2 sm:px-3">
-              <label htmlFor="destination" className="mb-1 block text-xs font-medium text-gray-500">
+              <label htmlFor="destination" className="mb-1 block text-xs font-medium text-muted-foreground">
                 Destination
               </label>
               <GeocoderInput
@@ -154,9 +154,9 @@ export default function Home() {
 
             {/* Date inputs */}
             {activeTab === "stays" ? (
-              <div className="flex flex-1 gap-2 px-2 sm:gap-0 sm:divide-x sm:divide-gray-200 sm:px-0">
+              <div className="flex flex-1 gap-2 px-2 sm:gap-0 sm:divide-x sm:divide-border sm:px-0">
                 <div className="flex-1 px-2 sm:px-3">
-                  <label htmlFor="check-in" className="mb-1 block text-xs font-medium text-gray-500">
+                  <label htmlFor="check-in" className="mb-1 block text-xs font-medium text-muted-foreground">
                     Check-in
                   </label>
                   <input
@@ -164,11 +164,11 @@ export default function Home() {
                     type="date"
                     value={checkIn}
                     onChange={(e) => setCheckIn(e.target.value)}
-                    className="w-full bg-transparent py-1.5 text-sm text-gray-900 focus:outline-none"
+                    className="w-full bg-transparent py-1.5 text-sm text-foreground focus:outline-none"
                   />
                 </div>
                 <div className="flex-1 px-2 sm:px-3">
-                  <label htmlFor="check-out" className="mb-1 block text-xs font-medium text-gray-500">
+                  <label htmlFor="check-out" className="mb-1 block text-xs font-medium text-muted-foreground">
                     Check-out
                   </label>
                   <input
@@ -176,13 +176,13 @@ export default function Home() {
                     type="date"
                     value={checkOut}
                     onChange={(e) => setCheckOut(e.target.value)}
-                    className="w-full bg-transparent py-1.5 text-sm text-gray-900 focus:outline-none"
+                    className="w-full bg-transparent py-1.5 text-sm text-foreground focus:outline-none"
                   />
                 </div>
               </div>
             ) : (
               <div className="flex-1 px-2 sm:px-3">
-                <label htmlFor="move-in" className="mb-1 block text-xs font-medium text-gray-500">
+                <label htmlFor="move-in" className="mb-1 block text-xs font-medium text-muted-foreground">
                   Move-in date
                 </label>
                 <input
@@ -190,21 +190,21 @@ export default function Home() {
                   type="date"
                   value={moveIn}
                   onChange={(e) => setMoveIn(e.target.value)}
-                  className="w-full bg-transparent py-1.5 text-sm text-gray-900 focus:outline-none"
+                  className="w-full bg-transparent py-1.5 text-sm text-foreground focus:outline-none"
                 />
               </div>
             )}
 
             {/* Radius */}
             <div className="px-2 sm:px-3">
-              <label htmlFor="radius" className="mb-1 block text-xs font-medium text-gray-500">
+              <label htmlFor="radius" className="mb-1 block text-xs font-medium text-muted-foreground">
                 Radius
               </label>
               <select
                 id="radius"
                 value={radius}
                 onChange={(e) => setRadius(Number(e.target.value))}
-                className="w-full bg-transparent py-1.5 text-sm text-gray-900 focus:outline-none"
+                className="w-full bg-transparent py-1.5 text-sm text-foreground focus:outline-none"
               >
                 {RADIUS_OPTIONS.map((r) => (
                   <option key={r} value={r}>
@@ -219,9 +219,9 @@ export default function Home() {
               <Button
                 type="submit"
                 disabled={!geo}
-                className="w-full cursor-pointer rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                className="w-full sm:w-auto"
               >
-                <Search className="size-4" aria-hidden="true" />
+                <Search className="size-4" data-icon="inline-start" aria-hidden="true" />
                 <span>Search</span>
               </Button>
             </div>
@@ -230,12 +230,12 @@ export default function Home() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="bg-white px-4 py-20">
+      <section id="how-it-works" className="bg-background px-4 py-20">
         <div className="mx-auto max-w-5xl">
-          <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-foreground">
             How It Works
           </h2>
-          <p className="mx-auto mt-2 max-w-lg text-center text-gray-500">
+          <p className="mx-auto mt-2 max-w-lg text-center text-muted-foreground">
             Three simple steps to your next adventure
           </p>
 
@@ -243,18 +243,18 @@ export default function Home() {
             {STEPS.map((step, i) => (
               <div
                 key={step.title}
-                className="group relative rounded-2xl border border-gray-100 bg-gray-50/50 p-8 text-center transition-shadow hover:shadow-md"
+                className="group relative rounded-2xl border border-border bg-muted/50 p-8 text-center transition-shadow hover:shadow-md"
               >
-                <span className="absolute -top-3 left-6 rounded-full bg-emerald-600 px-2.5 py-0.5 text-xs font-bold text-white">
+                <span className="absolute -top-3 left-6 rounded-full bg-primary px-2.5 py-0.5 text-xs font-bold text-primary-foreground">
                   {i + 1}
                 </span>
                 <step.icon
-                  className="mx-auto size-10 text-emerald-600"
+                  className="mx-auto size-10 text-primary"
                   aria-hidden="true"
                   strokeWidth={1.5}
                 />
-                <h3 className="mt-4 text-lg font-semibold text-gray-900">{step.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-gray-500">{step.description}</p>
+                <h3 className="mt-4 text-lg font-semibold text-foreground">{step.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.description}</p>
               </div>
             ))}
           </div>
@@ -262,12 +262,12 @@ export default function Home() {
       </section>
 
       {/* Popular Destinations */}
-      <section className="bg-gray-50 px-4 py-20">
+      <section className="bg-muted px-4 py-20">
         <div className="mx-auto max-w-5xl">
-          <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-foreground">
             Popular Destinations
           </h2>
-          <p className="mx-auto mt-2 max-w-lg text-center text-gray-500">
+          <p className="mx-auto mt-2 max-w-lg text-center text-muted-foreground">
             Explore unique private pads across the country
           </p>
 
@@ -276,7 +276,7 @@ export default function Home() {
               <button
                 key={dest.name}
                 onClick={() => handleDestinationClick(dest)}
-                className="group relative flex h-48 items-end overflow-hidden rounded-2xl bg-gradient-to-br p-5 text-left transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className="group relative flex h-48 items-end overflow-hidden rounded-2xl bg-gradient-to-br p-5 text-left transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
               >
                 <div
                   className={`absolute inset-0 bg-gradient-to-br ${dest.gradient} transition-opacity group-hover:opacity-90`}
@@ -297,7 +297,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="mt-auto bg-gray-900 px-4 py-12 text-gray-400">
+      <footer className="mt-auto bg-foreground px-4 py-12 text-muted-foreground">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-6">
           <nav aria-label="Footer navigation">
             <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2">
@@ -305,7 +305,7 @@ export default function Home() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-sm transition-colors hover:text-white focus-visible:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:rounded-sm"
+                    className="text-sm transition-colors hover:text-background focus-visible:text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-sm"
                   >
                     {link.label}
                   </Link>
@@ -313,7 +313,7 @@ export default function Home() {
               ))}
             </ul>
           </nav>
-          <p className="text-xs text-gray-500">&copy; 2026 Mini RV Parks</p>
+          <p className="text-xs text-muted-foreground">&copy; 2026 Mini RV Parks</p>
         </div>
       </footer>
     </div>
