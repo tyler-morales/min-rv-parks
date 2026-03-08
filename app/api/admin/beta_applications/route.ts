@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { dbListingToFrontend } from "@/lib/api/listings";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -27,8 +26,8 @@ export async function GET(request: Request) {
 
   const admin = createAdminClient();
   let query = admin
-    .from("listings")
-    .select("*, listing_photos(url, position)")
+    .from("beta_applications")
+    .select("*")
     .order("created_at", { ascending: false });
 
   if (status) {
@@ -41,31 +40,5 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const hostIds = [...new Set((rows ?? []).map((r: { host_id: string }) => r.host_id))];
-  const { data: profiles } = await admin
-    .from("profiles")
-    .select("id, full_name, avatar_url")
-    .in("id", hostIds);
-
-  const profileMap = new Map(
-    (profiles ?? []).map((p: { id: string; full_name: string | null; avatar_url: string | null }) => [
-      p.id,
-      { id: p.id, full_name: p.full_name, avatar_url: p.avatar_url, email: "" },
-    ])
-  );
-
-  const listings = (rows ?? []).map((row: Record<string, unknown>) => {
-    const host = profileMap.get(row.host_id as string) ?? {
-      id: String(row.host_id),
-      full_name: null,
-      avatar_url: null,
-      email: "",
-    };
-    return dbListingToFrontend(
-      row as unknown as Parameters<typeof dbListingToFrontend>[0],
-      host
-    );
-  });
-
-  return NextResponse.json(listings);
+  return NextResponse.json(rows ?? []);
 }

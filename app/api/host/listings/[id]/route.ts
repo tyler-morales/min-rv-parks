@@ -17,7 +17,7 @@ export async function GET(
 
   const { data: row, error } = await supabase
     .from("listings")
-    .select("*, listing_photos(url, position)")
+    .select("*, listing_photos(id, url, position)")
     .eq("id", id)
     .eq("host_id", user.id)
     .single();
@@ -46,8 +46,10 @@ export async function GET(
     row as Parameters<typeof dbListingToFrontend>[0],
     host
   );
-
-  return NextResponse.json(listing);
+  const photoIds = (row.listing_photos ?? [])
+    .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
+    .map((p: { id: string }) => p.id);
+  return NextResponse.json({ ...listing, photoIds });
 }
 
 export async function PATCH(
@@ -76,9 +78,62 @@ export async function PATCH(
   delete dbPayload.id;
   delete dbPayload.created_at;
 
+  if (body.lat != null && body.lng != null) {
+    const lat = Number(body.lat);
+    const lng = Number(body.lng);
+    if (
+      Number.isNaN(lat) ||
+      Number.isNaN(lng) ||
+      lat < -90 ||
+      lat > 90 ||
+      lng < -180 ||
+      lng > 180 ||
+      (lat === 0 && lng === 0)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Valid location required. Search for a city or place and select it from the list so guests can find your listing.",
+        },
+        { status: 400 }
+      );
+    }
+    dbPayload.lat = lat;
+    dbPayload.lng = lng;
+    const jitter = () => (Math.random() - 0.5) * 0.04;
+    dbPayload.public_lat = lat + jitter();
+    dbPayload.public_lng = lng + jitter();
+  }
+
   const { error } = await supabase
     .from("listings")
     .update(dbPayload)
+    .eq("id", id)
+    .eq("host_id", user.id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { error } = await supabase
+    .from("listings")
+    .delete()
     .eq("id", id)
     .eq("host_id", user.id);
 
