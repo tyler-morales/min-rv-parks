@@ -24,11 +24,18 @@ interface RequestWithListing {
 }
 
 export async function POST(request: Request) {
+  if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) {
+    return NextResponse.json(
+      { error: "Webhook not configured" },
+      { status: 503 },
+    );
+  }
+
   const body = await request.text();
   const sig = request.headers.get("stripe-signature");
 
-  if (!sig || !process.env.STRIPE_WEBHOOK_SECRET) {
-    return NextResponse.json({ error: "Missing signature or webhook secret" }, { status: 400 });
+  if (!sig) {
+    return NextResponse.json({ error: "Missing signature" }, { status: 400 });
   }
 
   let event: Stripe.Event;

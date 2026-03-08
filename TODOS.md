@@ -79,6 +79,7 @@ When you have a domain (e.g. minirvparks.com):
   - Types: added `Booking` and `StorageContract` interfaces, `stripeSessionId` on request types
   - Platform-only payments (no Stripe Connect for beta); host payouts handled manually
   - External cron (cron-job.org or similar) for expiry; no Vercel Pro dependency
+  - **Vercel preview deploy**: Stripe made optional in `lib/stripe.ts`; checkout and webhook routes return 503 when Stripe is disabled. README documents required env vars (Supabase + Mapbox only) for a live preview with no email and no payments. Full prod will add Resend + Stripe + `NEXT_PUBLIC_APP_URL` + cron when ready.
 
 - [x] **Milestone 5 — Beta Application Gating**:
   - Migration `005_beta_applications.sql`: `beta_applications` table with `beta_application_status_enum` (PENDING/APPROVED/REJECTED), unique email constraint, RLS (public INSERT, admin SELECT/UPDATE), `updated_at` trigger

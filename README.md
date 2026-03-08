@@ -59,7 +59,24 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-**Production env (Resend):** In Vercel (or wherever prod runs), either omit `RESEND_FROM` so the code uses `noreply@minirvparks.com` (after you verify the domain in Resend), or set `RESEND_FROM=Mini RV Parks <noreply@minirvparks.com>` explicitly. Do not use the sandbox address in production.
+### Deploy to Vercel (preview — no email, no Stripe)
+
+To get a **live front end** for demos without sending emails or processing payments:
+
+1. Connect your GitHub repo to a new Vercel project (or run `vercel` in the project root).
+2. In Vercel → Settings → Environment Variables, set **only** these (required for search, map, auth, and listings):
+
+   | Variable | Purpose |
+   |----------|---------|
+   | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Server-side Supabase access |
+   | `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox for search/map |
+
+3. **Do not set** `RESEND_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, or `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`. The app will run with emails skipped (no notifications) and payments disabled (Pay button returns a “not configured” message).
+4. Optionally set `NEXT_PUBLIC_APP_URL` to your Vercel URL (e.g. `https://your-app.vercel.app`) so in-app links use the live URL.
+
+**Production env (Resend):** When you enable email in prod, either omit `RESEND_FROM` so the code uses `noreply@minirvparks.com` (after you verify the domain in Resend), or set `RESEND_FROM=Mini RV Parks <noreply@minirvparks.com>` explicitly. Do not use the sandbox address in production.
 
 ## Stripe (Milestone 4) — No domain or business yet
 

@@ -10,6 +10,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "requestId is required" }, { status: 400 });
   }
 
+  if (!stripe) {
+    return NextResponse.json(
+      { error: "Payments are not configured for this environment." },
+      { status: 503 },
+    );
+  }
+
   const supabase = createAdminClient();
 
   const { data: req, error } = await supabase
