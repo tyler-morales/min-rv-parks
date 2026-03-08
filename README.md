@@ -8,8 +8,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 2. Create a [Supabase](https://supabase.com) project (e.g. `mini-rv-parks`).
 3. In **Settings → API**, copy Project URL, `anon` key, and `service_role` key into `.env.local` as `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
 4. In **Settings → Auth**, enable Email provider. For dev you can disable "Confirm email".
-5. Run the initial migration: Supabase Dashboard → SQL Editor → paste and run `supabase/migrations/001_initial_schema.sql`, or use the Supabase CLI (see below).
-6. Create the **listing-photos** storage bucket: Storage → New bucket → name `listing-photos`, set **Public bucket** so listing images are publicly readable. No extra policies required if uploads go through the API (server uses service role); for client uploads, add a policy allowing authenticated users to upload to `{listing_id}/*`.
+5. Run migrations in order (e.g. `supabase db push` or paste each file in SQL Editor): `001_initial_schema.sql` through `006_storage_listing_photos.sql`. Migration 006 creates the **listing-photos** bucket and RLS policies (public read; authenticated upload; delete only for own listing folders).
 
 ## Supabase CLI (migrations)
 
@@ -43,6 +42,11 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Security and runbook
+
+- **[docs/SECURITY.md](docs/SECURITY.md)** — What we validate (uploads, input), how we protect (auth, cron, storage, headers, rate limiting), and which env vars are secret vs public.
+- **[docs/RUNBOOK.md](docs/RUNBOOK.md)** — Env vars, cron setup (URL + header), storage bucket and RLS, and optional rate limiting (Upstash).
 
 ## Learn More
 

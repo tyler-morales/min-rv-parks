@@ -33,6 +33,8 @@
 - [x] **Host listing actions**: Edit and Delete on host listing detail; edit page at `/host/listings/[id]/edit` (title, description, nearTown, pricing, availability); DELETE API for host-owned listings
 - [x] **Edit listing photos**: Photos section on edit page — show thumbnails, delete per photo (API returns photoIds), add new photos via POST to existing `/api/host/listings/[id]/photos`; min 5 hint, max 10
 - [x] **Edit listing — nightly price in dollars**: Host edit form shows/accepts nightly price in dollars (e.g. 50) instead of cents; still stored as cents in API/DB.
+- [x] **shadcn skill + MCP**: Installed official shadcn skill (`.cursor/skills/shadcn/SKILL.md`, `mcp.md`), MCP config in `.cursor/mcp.json`. Rule updated to use skill and MCP tools when adding/customizing components.
+- [x] **MCP install + audit**: Installed Supabase, Stripe, GitHub MCPs in `.cursor/mcp.json` (project-scoped Supabase with read_only; Stripe/GitHub remote URLs). No secrets in config. Full audit in `docs/MCP_AUDIT.md`; setup notes in `.cursor/README.md`. Secrets via Cursor settings or env only.
 
 - [x] **Milestone 2 — Search + Mapbox + Detail API**: Postgres Haversine search functions (`search_stays`, `search_storage`), search API routes (`GET /api/search`, `GET /api/storage/search`), single-listing API (`GET /api/listings/[id]`), Mapbox geocoding autocomplete (`GeocoderInput` component), Mapbox map view (`MapView` component with fuzzed markers + popups), all guest pages wired to live API, hero search passes lat/lng, `formatPrice` moved to `lib/utils.ts`
 - [x] **Host listing location for search**: Host create/edit now require selecting a place via Mapbox geocoder (not free text). API rejects missing or (0,0) lat/lng; public_lat/lng fuzzed for map. Fixes guest search returning 0 results when host had only entered "near Chicago" without coordinates.
@@ -83,6 +85,14 @@ When you have a domain (e.g. minirvparks.com):
   - External cron (cron-job.org or similar) for expiry; no Vercel Pro dependency
   - **Vercel preview deploy**: Stripe made optional in `lib/stripe.ts`; checkout and webhook routes return 503 when Stripe is disabled. README documents required env vars (Supabase + Mapbox only) for a live preview with no email and no payments. Full prod will add Resend + Stripe + `NEXT_PUBLIC_APP_URL` + cron when ready.
 
+- [x] **Security plan (Phases 1–4 + docs)**:
+  - Upload validation: size (10MB), MIME (JPEG/PNG), magic bytes, safe path (`listingId/uuid.ext`), max 20 photos/listing ([lib/upload-validation.ts](lib/upload-validation.ts)); photo route returns generic errors and uses [lib/api-error.ts](lib/api-error.ts).
+  - Storage: migration [006_storage_listing_photos.sql](supabase/migrations/006_storage_listing_photos.sql) creates bucket and RLS (public read, authenticated insert, host-only delete).
+  - Input validation: Zod schemas for booking request, storage request, beta apply, listing create ([lib/validations/api.ts](lib/validations/api.ts)); body size caps; generic 500 responses across API routes.
+  - Rate limiting: [lib/rate-limit.ts](lib/rate-limit.ts) + [proxy.ts](proxy.ts) (Upstash Redis when env set); security headers and CSP in [next.config.ts](next.config.ts).
+  - Centralized error handling: [lib/api-error.ts](lib/api-error.ts); host route authz verified (host_id / listing ownership on all mutations).
+  - Docs: [docs/SECURITY.md](docs/SECURITY.md), [docs/RUNBOOK.md](docs/RUNBOOK.md); README updated for migration 006 and security/runbook links.
+
 - [x] **Milestone 5 — Beta Application Gating**:
   - Migration `005_beta_applications.sql`: `beta_applications` table with `beta_application_status_enum` (PENDING/APPROVED/REJECTED), unique email constraint, RLS (public INSERT, admin SELECT/UPDATE), `updated_at` trigger
   - Apply API: `POST /api/beta/apply` — public; inserts application, returns 409 on duplicate email, sends admin notification email via `ADMIN_EMAIL` env var
@@ -96,6 +106,7 @@ When you have a domain (e.g. minirvparks.com):
 
 ## Up Next
 
+- [ ] **Connect MCP servers (Stripe, Supabase, GitHub):** Config is in `.cursor/mcp.json`; auth is env/headers so Cursor does not hit the "dynamic client registration" error. **How:** (1) **Stripe** — set `STRIPE_SECRET_KEY` in env before starting Cursor (e.g. `export STRIPE_SECRET_KEY=sk_test_...` in terminal; use test/restricted key). (2) **Supabase** — in `.cursor/mcp.json` replace `YOUR_SUPABASE_PROJECT_REF` with your project ref (from Supabase URL); create a [Supabase access token](https://supabase.com/dashboard/account/tokens) and either replace `YOUR_SUPABASE_ACCESS_TOKEN` in the header (do not commit) or set the `Authorization: Bearer <token>` header in Cursor Settings → Tools & MCP for the Supabase server. (3) **GitHub** — install Docker; create a [GitHub PAT](https://github.com/settings/tokens) with `repo` scope; set `GITHUB_PERSONAL_ACCESS_TOKEN` in env before starting Cursor. Full steps: [.cursor/README.md](.cursor/README.md).
 - [ ] Deploy to staging
 
 ## Deleted/Consolidated
@@ -110,3 +121,4 @@ When you have a domain (e.g. minirvparks.com):
 - **Milestone 4**: Replaced mock payment pages (`/book/[id]/confirm`, `/store/[id]/confirm`) with real Stripe Checkout flow. Mock `onClick={() => setPaid(true)}` replaced with API call → Stripe redirect. Removed "This is a demo. No real payment is processed." notices. Updated `sendRequestAccepted` email from "You'll receive a payment link shortly" to a direct "Complete Payment" button with URL.
 - **Milestone 5**: Removed `betaApplications`, `approvedEmails`, `addBetaApplication`, `updateApplicationStatus` from Zustand store and `BetaApplication` mock data. Admin dashboard no longer imports `useAppStore`. Apply page no longer writes to client state — all beta data now lives in Postgres.
 - **node-domexception deprecation**: Removed `shadcn` from dependencies (it pulled in node-fetch → fetch-blob → node-domexception). Use `npx shadcn@latest add <component>` when adding UI components; `components.json` and existing UI components unchanged.
+- **shadcn styles/component audit executed**: Replaced `space-x-*`/`space-y-*` with `flex flex-col gap-*` (or `flex gap-*`) across `components/`, `app/`. Replaced raw colors (gray, emerald, red, etc.) with semantic tokens (`text-foreground`, `text-muted-foreground`, `bg-background`, `border-destructive`, `text-primary`, `bg-primary/10`, etc.). Replaced `h-X w-X` with `size-X` for equal-dimension icons. Added `data-icon="inline-start"` (or `inline-end`) to icons inside Button/Link. Card structure: added `CardHeader`/`CardTitle`/`CardFooter` where missing (store/book confirm, storage sidebar, book summary). Primary CTAs use default `Button` instead of custom `bg-emerald-600`. Error/alert blocks use `border-destructive`/`bg-destructive/10`/`text-destructive`. Geocoder, nav, map-view, listing-card, support, beta, home page, apply, admin, host pages updated. Audit report: `docs/AUDIT_SHADCN_STYLES_AND_COMPONENTS.md`. Form layout (FieldGroup/Field) not applied — component not in project; optional future refactor.
